@@ -1,0 +1,29 @@
+{
+  "name": "TodoAI",
+  "short_name": "TodoAI",
+  "description": "AI-powered goal planning that breaks down any objective into personalized, achievable daily tasks",
+  "icons": [
+    {
+      "src": "/favicon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/favicon-32x32.svg",
+      "sizes": "32x32",
+      "type": "image/svg+xml"
+    },
+    {
+      "src": "/apple-touch-icon.svg",
+      "sizes": "180x180",
+      "type": "image/svg+xml"
+    }
+  ],
+  "theme_color": "#ef4444",
+  "background_color": "#0a0a0a",
+  "display": "standalone",
+  "start_url": "/",
+  "scope": "/",
+  "categories": ["productivity", "business", "lifestyle"]
+} 
