@@ -10,35 +10,35 @@ import {
 
 const faqs = [
   {
-    question: "How does TodoAI create personalized plans?",
-    answer: "TodoAI uses advanced AI to analyze your goal, timeframe, and available time per day. It then breaks down your goal into weekly milestones and daily tasks, considering your skill level and learning curve. Each plan is unique to your specific situation and adapts as you progress."
+    question: "How does TodoAI create personalized goal plans?",
+    answer: "TodoAI uses advanced machine learning to analyze your goal, available time, current skill level, and preferences. It then breaks down your objective into weekly milestones and daily tasks that fit your schedule and learning style, ensuring realistic and achievable progress."
   },
   {
-    question: "What happens if I miss tasks or fall behind?",
-    answer: "No worries! TodoAI's adaptive planning automatically adjusts your remaining tasks when you miss a day. It redistributes the workload across your remaining timeline while keeping your end goal achievable. You'll get notifications about plan changes and suggestions to get back on track."
+    question: "What happens if I miss a day or fall behind?",
+    answer: "Life happens! TodoAI automatically adjusts your plan when you miss tasks. It redistributes your workload across upcoming days and adjusts timelines to keep you on track without overwhelming you. The AI learns from your patterns to create more realistic future plans."
   },
   {
-    question: "Can I manage multiple goals at the same time?",
-    answer: "Yes! Premium users can create and manage multiple goals simultaneously. TodoAI will balance your daily tasks across all active goals, ensuring you make progress on everything without overwhelming your schedule. Free users can have one active goal at a time."
+    question: "What types of goals work best with TodoAI?", 
+    answer: "TodoAI works with virtually any goal that can be broken into smaller actions. Popular categories include learning new skills (languages, instruments, coding), fitness goals, business objectives, creative projects, and academic achievements. Our AI has templates for 100+ goal types."
   },
   {
-    question: "What types of goals work best with TodoAI?",
-    answer: "TodoAI excels with skill-based goals (learning programming, languages, instruments), project goals (building a portfolio, writing a book), fitness goals (training for a marathon), and study goals (preparing for exams). Any goal that can be broken into progressive steps works great!"
+    question: "How much time do I need to spend on TodoAI daily?",
+    answer: "TodoAI is designed to fit your life, not control it. Most users spend 2-5 minutes daily reviewing tasks and updating progress. You can set your available time (15 minutes to several hours), and TodoAI creates plans that match your schedule."
   },
   {
-    question: "Is my data secure and private?",
-    answer: "Absolutely. Your goals and progress data are encrypted and stored securely. We never share your personal information or goals with third parties. You can export your data anytime and delete your account if needed. Privacy is a core principle of our platform."
+    question: "Is my goal and progress data secure?",
+    answer: "Absolutely. Your data is encrypted end-to-end and stored securely. We never share your personal goals or progress with third parties. You own your data and can export or delete it anytime. We're GDPR compliant and take privacy seriously."
   },
   {
-    question: "How much does TodoAI cost?",
-    answer: "TodoAI offers a generous free tier that includes one active goal with basic features. Our Premium plan ($9/month) includes unlimited goals, advanced customization, priority support, and AI chat assistance. You can cancel anytime with no questions asked."
+    question: "Can I use TodoAI for multiple goals simultaneously?",
+    answer: "Yes! TodoAI can manage multiple goals and coordinate them intelligently. It considers your total available time and energy to balance progress across all goals without burnout. Premium users can track unlimited goals with advanced scheduling optimization."
   }
 ]
 
 export function FAQSection() {
   return (
-    <section className="py-24 bg-slate-900/50">
-      <div className="container mx-auto px-4">
+    <section className="py-24 bg-[#0a0a0a]">
+      <div className="container mx-auto px-6">
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           whileInView={{ opacity: 1, y: 0 }}
@@ -46,11 +46,14 @@ export function FAQSection() {
           viewport={{ once: true }}
           className="text-center mb-16"
         >
-          <h2 className="text-4xl md:text-5xl font-bold mb-6 bg-gradient-to-r from-white to-gray-300 bg-clip-text text-transparent">
-            Frequently Asked Questions
+          <h3 className="text-sm font-semibold text-red-400 mb-4 tracking-wider">
+            FREQUENTLY ASKED QUESTIONS
+          </h3>
+          <h2 className="text-4xl md:text-5xl font-bold text-white mb-8">
+            Everything you need to know about TodoAI
           </h2>
           <p className="text-xl text-gray-400 max-w-2xl mx-auto">
-            Everything you need to know about TodoAI
+            Have questions? We've got answers. Here are the most common questions about how TodoAI works.
           </p>
         </motion.div>
 
@@ -72,12 +75,12 @@ export function FAQSection() {
                 >
                   <AccordionItem 
                     value={`item-${index}`}
-                    className="bg-slate-800/50 backdrop-blur-sm border border-slate-700/50 rounded-lg px-6 hover:border-purple-500/50 transition-all duration-300"
+                    className="bg-gray-900/50 border border-gray-800 rounded-lg px-6 hover:bg-gray-800/50 hover:border-red-500/30 transition-all duration-300"
                   >
-                    <AccordionTrigger className="text-white text-lg font-medium hover:text-purple-300 py-6">
+                    <AccordionTrigger className="text-white text-lg font-medium hover:text-gray-300 py-6 text-left">
                       {faq.question}
                     </AccordionTrigger>
-                    <AccordionContent className="text-gray-300 text-base leading-relaxed pb-6">
+                    <AccordionContent className="text-gray-400 text-base leading-relaxed pb-6">
                       {faq.answer}
                     </AccordionContent>
                   </AccordionItem>
@@ -86,20 +89,6 @@ export function FAQSection() {
             </Accordion>
           </motion.div>
         </div>
-
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.6, delay: 0.8 }}
-          viewport={{ once: true }}
-          className="text-center mt-16"
-        >
-          <div className="inline-block bg-gradient-to-r from-blue-600/20 to-purple-600/20 border border-blue-500/30 rounded-lg p-6">
-            <p className="text-blue-300 font-medium">
-              Still have questions? <span className="text-white font-bold">Contact our team</span> - we respond within 2 hours
-            </p>
-          </div>
-        </motion.div>
       </div>
     </section>
   )

@@ -1,98 +1,208 @@
 "use client"
 
 import { motion } from "framer-motion"
-import { Target, Brain, CheckCircle } from "lucide-react"
+import { 
+  Target, 
+  Brain, 
+  Calendar, 
+  TrendingUp, 
+  CheckCircle, 
+  ArrowRight,
+  Sparkles,
+  BarChart3
+} from "lucide-react"
 
 const steps = [
   {
+    number: "01",
     icon: Target,
-    title: "Set Your Goal",
-    description: "Tell us what you want to achieve, when you want to finish, and how much time you can dedicate daily.",
-    step: "01"
+    title: "Define Your Goal",
+    description: "Tell TodoAI what you want to achieve. Whether it's learning Spanish, launching a startup, or running a marathon - just describe your goal in natural language.",
+    details: [
+      "Describe your goal in plain English",
+      "Set your target completion date",
+      "Specify your available time per day",
+      "Choose your skill level"
+    ],
+    image: "goal-setup"
   },
   {
+    number: "02", 
     icon: Brain,
     title: "AI Creates Your Plan",
-    description: "Our AI breaks down your goal into weekly milestones and actionable daily tasks tailored to your schedule.",
-    step: "02"
+    description: "Our AI analyzes your goal and creates a personalized roadmap with weekly milestones and daily tasks that fit your schedule and learning style.",
+    details: [
+      "AI breaks down complex goals",
+      "Creates realistic daily tasks",
+      "Schedules around your availability", 
+      "Adapts to your learning pace"
+    ],
+    image: "ai-planning"
   },
   {
+    number: "03",
+    icon: Calendar,
+    title: "Follow Daily Actions",
+    description: "Get clear, actionable tasks each day. No more wondering what to do next - TodoAI tells you exactly what steps to take to make progress.",
+    details: [
+      "Clear daily task lists",
+      "Estimated time for each task",
+      "Progress tracking built-in",
+      "Streak counters for motivation"
+    ],
+    image: "daily-tasks"
+  },
+  {
+    number: "04",
+    icon: TrendingUp,
+    title: "Track & Adjust",
+    description: "Watch your progress unfold with beautiful analytics. TodoAI learns from your patterns and adjusts future plans to optimize your success.",
+    details: [
+      "Visual progress dashboards",
+      "Completion rate analytics",
+      "Automatic plan adjustments",
+      "Achievement celebrations"
+    ],
+    image: "progress-tracking"
+  }
+]
+
+const benefits = [
+  {
     icon: CheckCircle,
-    title: "Execute Daily",
-    description: "Follow your personalized roadmap, track progress, and let AI adapt your plan as you go.",
-    step: "03"
+    title: "90% Success Rate",
+    description: "Users who follow TodoAI plans complete their goals 3x more often than traditional methods."
+  },
+  {
+    icon: Sparkles,
+    title: "Personalized Experience", 
+    description: "Every plan is unique to you - your schedule, preferences, and learning style."
+  },
+  {
+    icon: BarChart3,
+    title: "Data-Driven Optimization",
+    description: "AI continuously improves your plans based on your progress patterns and feedback."
   }
 ]
 
 export function HowItWorks() {
   return (
-    <section className="py-24 bg-slate-900/50">
-      <div className="container mx-auto px-4">
+    <section className="py-24 bg-gray-900/30" id="how-it-works">
+      <div className="container mx-auto px-6">
+        {/* Section Header */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           whileInView={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.6 }}
           viewport={{ once: true }}
-          className="text-center mb-16"
+          className="text-center mb-20"
         >
-          <h2 className="text-4xl md:text-5xl font-bold mb-6 bg-gradient-to-r from-white to-gray-300 bg-clip-text text-transparent">
-            How It Works
+          <h3 className="text-sm font-semibold text-red-400 mb-4 tracking-wider">
+            HOW IT WORKS
+          </h3>
+          <h2 className="text-4xl md:text-5xl font-bold text-white mb-8">
+            From dream to done in four steps
           </h2>
-          <p className="text-xl text-gray-400 max-w-2xl mx-auto">
-            Transform any goal into a step-by-step action plan in minutes
+          <p className="text-xl text-gray-400 max-w-3xl mx-auto">
+            TodoAI makes goal achievement systematic and sustainable. Here's exactly how we turn your ambitious goals into daily progress.
           </p>
         </motion.div>
 
+        {/* Steps */}
         <div className="max-w-6xl mx-auto">
-          <div className="grid md:grid-cols-3 gap-8 md:gap-12">
-            {steps.map((step, index) => (
-              <motion.div
-                key={index}
-                initial={{ opacity: 0, y: 30 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.6, delay: index * 0.2 }}
-                viewport={{ once: true }}
-                className="relative"
-              >
-                {/* Connection line */}
-                {index < steps.length - 1 && (
-                  <div className="hidden md:block absolute top-16 left-full w-full h-0.5 bg-gradient-to-r from-purple-500 to-transparent z-0 transform translate-x-4"></div>
-                )}
+          {steps.map((step, index) => (
+            <motion.div
+              key={index}
+              initial={{ opacity: 0, y: 40 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.8, delay: index * 0.2 }}
+              viewport={{ once: true }}
+              className={`flex flex-col lg:flex-row items-center gap-12 mb-20 ${
+                index % 2 === 1 ? 'lg:flex-row-reverse' : ''
+              }`}
+            >
+              {/* Content */}
+              <div className="flex-1 space-y-6">
+                <div className="flex items-center gap-4">
+                  <div className="w-12 h-12 bg-red-500 rounded-lg flex items-center justify-center">
+                    <step.icon className="w-6 h-6 text-white" />
+                  </div>
+                  <span className="text-6xl font-bold text-gray-800">{step.number}</span>
+                </div>
                 
-                <div className="relative z-10 text-center">
-                  <div className="mb-6">
-                    <div className="inline-flex items-center justify-center w-20 h-20 bg-gradient-to-br from-purple-600 to-blue-600 rounded-full glow-purple mb-4">
-                      <step.icon className="w-10 h-10 text-white" />
-                    </div>
-                    <div className="text-6xl font-bold text-purple-400/30 absolute top-0 left-1/2 transform -translate-x-1/2 -translate-y-4 -z-10">
-                      {step.step}
+                <h3 className="text-3xl font-bold text-white">
+                  {step.title}
+                </h3>
+                
+                <p className="text-lg text-gray-400 leading-relaxed">
+                  {step.description}
+                </p>
+                
+                <ul className="space-y-3">
+                  {step.details.map((detail, detailIndex) => (
+                    <li key={detailIndex} className="flex items-center gap-3 text-gray-300">
+                      <CheckCircle className="w-5 h-5 text-green-400 flex-shrink-0" />
+                      {detail}
+                    </li>
+                  ))}
+                </ul>
+              </div>
+
+              {/* Visual Placeholder */}
+              <div className="flex-1">
+                <div className="bg-gray-800 rounded-lg p-8 border border-gray-700">
+                  <div className="aspect-video bg-gray-700 rounded-lg flex items-center justify-center">
+                    <div className="text-center">
+                      <step.icon className="w-16 h-16 text-red-400 mx-auto mb-4" />
+                      <div className="text-gray-400 text-sm">
+                        {step.title} Interface Preview
+                      </div>
                     </div>
                   </div>
-                  
-                  <h3 className="text-2xl font-bold text-white mb-4">
-                    {step.title}
-                  </h3>
-                  
-                  <p className="text-gray-400 leading-relaxed">
-                    {step.description}
-                  </p>
                 </div>
-              </motion.div>
-            ))}
-          </div>
+              </div>
+            </motion.div>
+          ))}
         </div>
 
+        {/* Benefits Section */}
         <motion.div
-          initial={{ opacity: 0, y: 20 }}
+          initial={{ opacity: 0, y: 30 }}
           whileInView={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.6, delay: 0.8 }}
+          transition={{ duration: 0.8 }}
           viewport={{ once: true }}
-          className="text-center mt-16"
+          className="bg-gray-900/50 border border-gray-800 rounded-xl p-8 md:p-12"
         >
-          <div className="inline-block bg-gradient-to-r from-purple-600/20 to-blue-600/20 border border-purple-500/30 rounded-lg p-6">
-            <p className="text-purple-300 font-medium">
-              ⚡ Average setup time: <span className="text-white">30 seconds</span>
+          <div className="text-center mb-12">
+            <h3 className="text-2xl md:text-3xl font-bold text-white mb-4">
+              Why TodoAI works where others fail
+            </h3>
+            <p className="text-gray-400 max-w-2xl mx-auto">
+              Most goal-setting approaches fail because they're too vague or inflexible. TodoAI solves this with AI-powered personalization.
             </p>
+          </div>
+
+          <div className="grid md:grid-cols-3 gap-8">
+            {benefits.map((benefit, index) => (
+              <motion.div
+                key={index}
+                initial={{ opacity: 0, y: 20 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.6, delay: index * 0.1 }}
+                viewport={{ once: true }}
+                className="text-center"
+              >
+                <div className="w-12 h-12 bg-red-500/20 rounded-lg flex items-center justify-center mx-auto mb-4">
+                  <benefit.icon className="w-6 h-6 text-red-400" />
+                </div>
+                <h4 className="text-lg font-semibold text-white mb-3">
+                  {benefit.title}
+                </h4>
+                <p className="text-gray-400">
+                  {benefit.description}
+                </p>
+              </motion.div>
+            ))}
           </div>
         </motion.div>
       </div>
