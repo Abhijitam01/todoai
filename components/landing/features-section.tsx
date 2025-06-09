@@ -86,9 +86,20 @@ const integrations = [
 
 export function FeaturesSection() {
   return (
-    <div className="bg-[#0a0a0a] text-white">
+    <div className="bg-[#0a0a0a] text-white relative overflow-hidden">
+      {/* Grid Background */}
+      <div className="absolute inset-0 opacity-10">
+        <div className="absolute inset-0" style={{
+          backgroundImage: `
+            linear-gradient(rgba(255, 255, 255, 0.05) 1px, transparent 1px),
+            linear-gradient(90deg, rgba(255, 255, 255, 0.05) 1px, transparent 1px)
+          `,
+          backgroundSize: '40px 40px'
+        }}></div>
+      </div>
+
       {/* Main Features Section */}
-      <section className="py-24">
+      <section className="py-24 relative z-10">
         <div className="container mx-auto px-6">
           <motion.div
             initial={{ opacity: 0, y: 20 }}
@@ -113,29 +124,29 @@ export function FeaturesSection() {
                 whileInView={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.6, delay: index * 0.1 }}
                 viewport={{ once: true }}
-                className="bg-gray-900/50 border border-gray-800 rounded-xl p-8 hover:border-red-500/30 transition-all duration-300"
+                className="bg-gray-900/50 border border-gray-800 rounded-xl p-6 md:p-8 hover:border-red-500/30 transition-all duration-500 transform hover:scale-[1.02] hover:shadow-2xl hover:shadow-red-500/10 group cursor-pointer"
               >
-                <div className="w-14 h-14 bg-red-500 rounded-lg flex items-center justify-center mb-6">
+                <div className="w-14 h-14 bg-red-500 rounded-lg flex items-center justify-center mb-6 transform transition-all duration-300 group-hover:scale-110 group-hover:bg-red-400 group-hover:shadow-lg group-hover:shadow-red-500/30">
                   <feature.icon className="w-7 h-7 text-white" />
                 </div>
                 
-                <h3 className="text-2xl font-bold text-white mb-3">
+                <h3 className="text-xl md:text-2xl font-bold text-white mb-3 group-hover:text-red-100 transition-colors duration-300">
                   {feature.title}
                 </h3>
                 
-                <p className="text-gray-400 leading-relaxed mb-4">
+                <p className="text-gray-400 leading-relaxed mb-4 group-hover:text-gray-300 transition-colors duration-300">
                   {feature.description}
                 </p>
 
                 <div className="flex flex-wrap gap-2 mb-4">
                   {feature.tags.map((tag, tagIndex) => (
-                    <span key={tagIndex} className="px-3 py-1 bg-gray-800 rounded-full text-sm text-gray-300">
+                    <span key={tagIndex} className="px-3 py-1 bg-gray-800 rounded-full text-sm text-gray-300 group-hover:bg-red-500/20 group-hover:text-red-300 transition-all duration-300">
                       {tag}
                     </span>
                   ))}
                 </div>
 
-                <p className="text-sm text-gray-500">
+                <p className="text-sm text-gray-500 group-hover:text-gray-400 transition-colors duration-300">
                   {feature.subtitle}
                 </p>
               </motion.div>

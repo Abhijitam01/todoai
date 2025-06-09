@@ -4,6 +4,7 @@ import { HowItWorks } from "@/components/landing/how-it-works"
 import { FeaturesSection } from "@/components/landing/features-section"
 import { WhyTodoAI } from "@/components/landing/why-todoai"
 import { FAQSection } from "@/components/landing/faq-section"
+import { FinalCTA } from "@/components/landing/final-cta"
 import { Footer } from "@/components/landing/footer"
 
 export default function LandingPage() {
@@ -15,6 +16,7 @@ export default function LandingPage() {
       <FeaturesSection />
       <WhyTodoAI />
       <FAQSection />
+      <FinalCTA />
       <Footer />
     </main>
   )

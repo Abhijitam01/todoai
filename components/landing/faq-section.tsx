@@ -7,6 +7,7 @@ import {
   AccordionItem,
   AccordionTrigger,
 } from "@/components/ui/accordion"
+import { useState } from "react"
 
 const faqs = [
   {
@@ -36,9 +37,19 @@ const faqs = [
 ]
 
 export function FAQSection() {
+  const [openItem, setOpenItem] = useState<number | null>(null)
+
   return (
-    <section className="py-24 bg-[#0a0a0a]">
-      <div className="container mx-auto px-6">
+    <section className="py-24 bg-gray-950 relative overflow-hidden" id="faq">
+      {/* Dot Grid Pattern */}
+      <div className="absolute inset-0 opacity-10">
+        <div className="absolute inset-0" style={{
+          backgroundImage: `radial-gradient(rgba(239, 68, 68, 0.4) 1px, transparent 1px)`,
+          backgroundSize: '25px 25px'
+        }}></div>
+      </div>
+
+      <div className="container mx-auto px-6 relative z-10">
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           whileInView={{ opacity: 1, y: 0 }}

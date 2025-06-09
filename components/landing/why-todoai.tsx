@@ -15,27 +15,27 @@ import {
 const stats = [
   {
     icon: Users,
-    number: "10,000+",
-    label: "Goals Achieved",
-    description: "Dreams turned into reality"
+    number: "50K+",
+    label: "Goals Will Be Achieved",
+    description: "When we launch (projected)"
   },
   {
     icon: TrendingUp,
     number: "3x",
     label: "Higher Success Rate",
-    description: "Compared to traditional methods"
+    description: "In beta testing vs traditional methods"
   },
   {
     icon: Clock,
     number: "89%",
-    label: "Completion Rate",
-    description: "Users who stick with TodoAI"
+    label: "Beta Completion Rate",
+    description: "Early users love TodoAI"
   },
   {
     icon: Star,
     number: "4.9/5",
-    label: "User Rating",
-    description: "Based on 2,000+ reviews"
+    label: "Beta User Rating",
+    description: "Based on 500+ beta testers"
   }
 ]
 
@@ -89,8 +89,19 @@ const whyChooseUs = [
 
 export function WhyTodoAI() {
   return (
-    <section className="py-24 bg-[#0a0a0a]" id="why-todoai">
-      <div className="container mx-auto px-6">
+    <section className="py-24 bg-[#0a0a0a] relative overflow-hidden" id="why-todoai">
+      {/* Diagonal Grid Pattern */}
+      <div className="absolute inset-0 opacity-5">
+        <div className="absolute inset-0" style={{
+          backgroundImage: `
+            linear-gradient(45deg, rgba(239, 68, 68, 0.3) 1px, transparent 1px),
+            linear-gradient(-45deg, rgba(239, 68, 68, 0.3) 1px, transparent 1px)
+          `,
+          backgroundSize: '30px 30px'
+        }}></div>
+      </div>
+
+      <div className="container mx-auto px-6 relative z-10">
         {/* Section Header */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
