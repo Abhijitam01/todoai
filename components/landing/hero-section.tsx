@@ -7,6 +7,10 @@ import { useEffect, useState } from "react"
 
 export function HeroSection() {
   const [dimensions, setDimensions] = useState({ width: 1200, height: 800 })
+  const [email, setEmail] = useState("")
+  const [isLoading, setIsLoading] = useState(false)
+  const [isSuccess, setIsSuccess] = useState(false)
+  const [error, setError] = useState("")
 
   useEffect(() => {
     if (typeof window !== 'undefined') {
@@ -16,6 +20,46 @@ export function HeroSection() {
       })
     }
   }, [])
+
+  const resetStatus = () => {
+    setIsSuccess(false)
+    setError("")
+  }
+
+  const handleQuickSignup = async (e: React.FormEvent) => {
+    e.preventDefault()
+    if (!email.trim()) return
+
+    setIsLoading(true)
+    setError("")
+    setIsSuccess(false)
+
+    try {
+      const response = await fetch('/api/waitlist', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          email: email.trim(),
+          source: 'hero_section'
+        }),
+      })
+
+      const data = await response.json()
+
+      if (response.ok) {
+        setIsSuccess(true)
+        setEmail("")
+      } else {
+        setError(data.error || 'Failed to join waitlist')
+      }
+    } catch (err) {
+      setError('Network error. Please try again.')
+    } finally {
+      setIsLoading(false)
+    }
+  }
 
   return (
     <section className="relative min-h-screen flex items-center justify-center overflow-hidden bg-gradient-to-br from-slate-900 via-purple-900/20 to-slate-900">
@@ -81,7 +125,7 @@ export function HeroSection() {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.6, delay: 0.3 }}
-            className="flex flex-col sm:flex-row gap-4 justify-center items-center"
+            className="flex flex-col sm:flex-row gap-4 justify-center items-center mb-8"
           >
             <Button 
               variant="glow" 
@@ -101,11 +145,53 @@ export function HeroSection() {
             </Button>
           </motion.div>
 
+          {/* Quick Email Signup */}
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.6, delay: 0.4 }}
-            className="mt-16 text-sm text-gray-400"
+            className="mb-8"
+          >
+            <p className="text-gray-400 mb-4">Or join our waitlist for early access:</p>
+            <form onSubmit={handleQuickSignup} className="flex flex-col sm:flex-row gap-3 max-w-md mx-auto">
+              <input
+                type="email"
+                value={email}
+                onChange={(e) => {
+                  setEmail(e.target.value)
+                  if (error || isSuccess) resetStatus()
+                }}
+                placeholder="Enter your email"
+                className={`flex-1 px-4 py-3 bg-slate-800/50 border rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-purple-500 transition-colors ${
+                  error ? 'border-red-500' : isSuccess ? 'border-green-500' : 'border-slate-600'
+                }`}
+                disabled={isLoading}
+                required
+              />
+              <Button 
+                type="submit"
+                variant="secondary" 
+                disabled={isLoading || !email.trim()}
+                className="bg-purple-600/20 hover:bg-purple-600/30 border-purple-500/50 text-purple-300"
+              >
+                {isLoading ? "Joining..." : "Join Waitlist"}
+              </Button>
+            </form>
+            
+            {error && (
+              <p className="text-red-400 text-sm mt-2">{error}</p>
+            )}
+            
+            {isSuccess && (
+              <p className="text-green-400 text-sm mt-2">✅ You're on the waitlist!</p>
+            )}
+          </motion.div>
+
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.6, delay: 0.5 }}
+            className="text-sm text-gray-400"
           >
             ✨ No credit card required • ✨ Setup in 30 seconds • ✨ Start achieving today
           </motion.div>

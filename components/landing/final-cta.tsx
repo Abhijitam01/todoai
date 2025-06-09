@@ -1,10 +1,63 @@
 "use client"
 
+import { useState } from "react"
 import { motion } from "framer-motion"
 import { Button } from "@/components/ui/button"
-import { ArrowRight, Mail, Users } from "lucide-react"
+import { ArrowRight, Mail, Users, CheckCircle, AlertCircle, Loader2 } from "lucide-react"
 
 export function FinalCTA() {
+  const [email, setEmail] = useState("")
+  const [isLoading, setIsLoading] = useState(false)
+  const [isSuccess, setIsSuccess] = useState(false)
+  const [error, setError] = useState("")
+
+  const resetStatus = () => {
+    setIsSuccess(false)
+    setError("")
+  }
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault()
+    if (!email.trim()) return
+
+    setIsLoading(true)
+    setError("")
+    setIsSuccess(false)
+
+    try {
+      const response = await fetch('/api/waitlist', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          email: email.trim(),
+          source: 'final_cta'
+        }),
+      })
+
+      const data = await response.json()
+
+      if (response.ok) {
+        setIsSuccess(true)
+        setEmail("") // Clear the input on success
+      } else {
+        setError(data.error || 'Failed to join waitlist')
+      }
+    } catch (err) {
+      setError('Network error. Please try again.')
+    } finally {
+      setIsLoading(false)
+    }
+  }
+
+  const handleEmailChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setEmail(e.target.value)
+    if (error || isSuccess) {
+      resetStatus() // Clear status when user starts typing again
+    }
+  }
+
   return (
     <section className="py-24 bg-gradient-to-br from-purple-900 via-slate-900 to-blue-900 relative overflow-hidden">
       {/* Background Effects */}
@@ -60,24 +113,64 @@ export function FinalCTA() {
             viewport={{ once: true }}
             className="mb-8"
           >
-            <div className="flex flex-col sm:flex-row gap-4 max-w-lg mx-auto">
+            <form onSubmit={handleSubmit} className="flex flex-col sm:flex-row gap-4 max-w-lg mx-auto">
               <div className="relative flex-1">
                 <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
                 <input
                   type="email"
+                  value={email}
+                  onChange={handleEmailChange}
                   placeholder="Enter your email for early access"
-                  className="w-full pl-10 pr-4 py-4 bg-slate-800/50 border border-slate-600 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                  className={`w-full pl-10 pr-4 py-4 bg-slate-800/50 border rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-colors ${
+                    error ? 'border-red-500' : isSuccess ? 'border-green-500' : 'border-slate-600'
+                  }`}
+                  disabled={isLoading}
+                  required
                 />
               </div>
               <Button 
+                type="submit"
                 variant="glow" 
                 size="lg"
+                disabled={isLoading || !email.trim()}
                 className="group whitespace-nowrap"
               >
-                Join Waitlist
-                <ArrowRight className="ml-2 w-5 h-5 group-hover:translate-x-1 transition-transform" />
+                {isLoading ? (
+                  <>
+                    <Loader2 className="w-5 h-5 mr-2 animate-spin" />
+                    Joining...
+                  </>
+                ) : (
+                  <>
+                    Join Waitlist
+                    <ArrowRight className="ml-2 w-5 h-5 group-hover:translate-x-1 transition-transform" />
+                  </>
+                )}
               </Button>
-            </div>
+            </form>
+
+            {/* Status Messages */}
+            {error && (
+              <motion.div
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                className="mt-4 flex items-center justify-center gap-2 text-red-400"
+              >
+                <AlertCircle className="w-4 h-4" />
+                <span className="text-sm">{error}</span>
+              </motion.div>
+            )}
+
+            {isSuccess && (
+              <motion.div
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                className="mt-4 flex items-center justify-center gap-2 text-green-400"
+              >
+                <CheckCircle className="w-4 h-4" />
+                <span className="text-sm">🎉 You're on the waitlist! We'll notify you when TodoAI launches.</span>
+              </motion.div>
+            )}
           </motion.div>
 
           <motion.div
