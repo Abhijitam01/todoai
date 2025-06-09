@@ -169,8 +169,8 @@ export function FinalCTA() {
                     value={email}
                     onChange={handleEmailChange}
                     placeholder="Enter your email for early access"
-                    className={`w-full pl-12 pr-4 py-4 bg-gray-800/50 border rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-transparent transition-colors ${
-                      error ? 'border-red-500' : isSuccess ? 'border-green-500' : 'border-gray-600'
+                    className={`w-full pl-12 pr-4 py-4 bg-gray-800/50 border rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-transparent transition-all duration-300 hover:bg-gray-700/50 ${
+                      error ? 'border-red-500' : isSuccess ? 'border-green-500' : 'border-gray-600 hover:border-gray-500'
                     }`}
                     disabled={isLoading}
                     required
@@ -179,7 +179,7 @@ export function FinalCTA() {
                 <Button 
                   type="submit"
                   disabled={isLoading || !email.trim()}
-                  className="bg-red-500 hover:bg-red-600 text-white px-8 py-4 rounded-lg font-medium"
+                  className="bg-red-500 hover:bg-red-600 text-white px-6 md:px-8 py-4 rounded-lg font-medium transform transition-all duration-300 hover:scale-105 hover:shadow-xl hover:shadow-red-500/25 group relative overflow-hidden"
                 >
                   {isLoading ? (
                     <>
@@ -188,8 +188,9 @@ export function FinalCTA() {
                     </>
                   ) : (
                     <>
-                      Join Waitlist
-                      <ArrowRight className="ml-2 w-4 h-4" />
+                      <span className="relative z-10">Join Waitlist</span>
+                      <ArrowRight className="ml-2 w-4 h-4 relative z-10 group-hover:translate-x-1 transition-transform duration-300" />
+                      <div className="absolute inset-0 bg-gradient-to-r from-red-600 to-red-500 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
                     </>
                   )}
                 </Button>
@@ -239,10 +240,10 @@ export function FinalCTA() {
               <Button 
                 variant="outline"
                 onClick={() => setIsModalOpen(true)}
-                className="border-gray-600 text-gray-300 hover:bg-gray-800 hover:text-white px-8 py-3 rounded-lg"
+                className="border-gray-600 text-gray-300 hover:bg-gray-800 hover:text-white px-6 md:px-8 py-3 rounded-lg transform transition-all duration-300 hover:scale-105 hover:border-red-500/50 group"
               >
                 <Play className="mr-2 w-4 h-4" />
-                Try Interactive Demo
+                <span>Try Interactive Demo</span>
               </Button>
             </motion.div>
 
@@ -252,7 +253,7 @@ export function FinalCTA() {
               whileInView={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.8, delay: 0.3 }}
               viewport={{ once: true }}
-              className="grid grid-cols-2 md:grid-cols-4 gap-8"
+              className="grid grid-cols-2 md:grid-cols-4 gap-4 md:gap-8"
             >
               {stats.map((stat, index) => (
                 <motion.div
@@ -261,14 +262,14 @@ export function FinalCTA() {
                   whileInView={{ opacity: 1, y: 0 }}
                   transition={{ duration: 0.6, delay: index * 0.1 }}
                   viewport={{ once: true }}
-                  className="text-center"
+                  className="text-center group cursor-pointer"
                 >
-                  <div className="w-12 h-12 bg-red-500/20 rounded-lg flex items-center justify-center mx-auto mb-4">
-                    <stat.icon className="w-6 h-6 text-red-400" />
+                  <div className="w-10 md:w-12 h-10 md:h-12 bg-red-500/20 rounded-lg flex items-center justify-center mx-auto mb-3 md:mb-4 group-hover:bg-red-500/30 group-hover:scale-110 transition-all duration-300">
+                    <stat.icon className="w-5 md:w-6 h-5 md:h-6 text-red-400 group-hover:text-red-300 transition-colors duration-300" />
                   </div>
-                  <div className="text-3xl md:text-4xl font-bold text-white mb-2">{stat.number}</div>
-                  <div className="text-lg font-medium text-gray-300 mb-1">{stat.label}</div>
-                  <div className="text-sm text-gray-500">{stat.description}</div>
+                  <div className="text-2xl md:text-3xl lg:text-4xl font-bold text-white mb-2 group-hover:text-red-100 transition-colors duration-300">{stat.number}</div>
+                  <div className="text-sm md:text-lg font-medium text-gray-300 mb-1 group-hover:text-gray-200 transition-colors duration-300">{stat.label}</div>
+                  <div className="text-xs md:text-sm text-gray-500 group-hover:text-gray-400 transition-colors duration-300">{stat.description}</div>
                 </motion.div>
               ))}
             </motion.div>

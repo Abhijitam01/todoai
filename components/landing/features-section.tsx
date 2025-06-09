@@ -181,20 +181,20 @@ export function FeaturesSection() {
                 whileInView={{ opacity: 1, x: 0 }}
                 transition={{ duration: 0.6, delay: index * 0.1 }}
                 viewport={{ once: true }}
-                className="flex items-start gap-6 p-6 rounded-lg hover:bg-gray-800/30 transition-colors border border-gray-800/50"
+                className="flex flex-col md:flex-row md:items-start gap-4 md:gap-6 p-4 md:p-6 rounded-lg hover:bg-gray-800/30 transition-all duration-300 border border-gray-800/50 hover:border-red-500/30 group cursor-pointer transform hover:scale-[1.01]"
               >
-                <div className="w-12 h-12 bg-red-500/20 rounded-lg flex items-center justify-center flex-shrink-0">
-                  <feature.icon className="w-6 h-6 text-red-400" />
+                <div className="w-12 h-12 bg-red-500/20 rounded-lg flex items-center justify-center flex-shrink-0 group-hover:bg-red-500/30 group-hover:scale-110 transition-all duration-300">
+                  <feature.icon className="w-6 h-6 text-red-400 group-hover:text-red-300 transition-colors duration-300" />
                 </div>
                 
                 <div className="flex-1">
-                  <div className="flex items-center justify-between mb-2">
-                    <h4 className="font-semibold text-white text-lg">{feature.title}</h4>
-                    <span className="text-sm text-red-400 bg-red-500/20 px-3 py-1 rounded-full">
+                  <div className="flex flex-col md:flex-row md:items-center justify-between mb-2">
+                    <h4 className="font-semibold text-white text-lg group-hover:text-red-100 transition-colors duration-300">{feature.title}</h4>
+                    <span className="text-sm text-red-400 bg-red-500/20 px-3 py-1 rounded-full mt-2 md:mt-0 self-start group-hover:bg-red-500/30 group-hover:text-red-300 transition-all duration-300">
                       {feature.metrics}
                     </span>
                   </div>
-                  <p className="text-gray-400">{feature.description}</p>
+                  <p className="text-gray-400 group-hover:text-gray-300 transition-colors duration-300">{feature.description}</p>
                 </div>
               </motion.div>
             ))}
@@ -212,19 +212,19 @@ export function FeaturesSection() {
             viewport={{ once: true }}
             className="text-center mb-16"
           >
-            <h2 className="text-4xl md:text-5xl font-bold text-white mb-8">
+            <h2 className="text-3xl md:text-4xl lg:text-5xl font-bold text-white mb-6 md:mb-8">
               Connects with your favorite tools
             </h2>
-            <p className="text-xl text-gray-400 mb-8 max-w-2xl mx-auto">
+            <p className="text-lg md:text-xl text-gray-400 mb-6 md:mb-8 max-w-2xl mx-auto">
               TodoAI integrates seamlessly with the apps you already use, making goal tracking effortless.
             </p>
-            <Button className="bg-red-500 hover:bg-red-600 text-white px-8 py-3 rounded-lg">
-              View All Integrations
-              <ArrowRight className="ml-2 w-4 h-4" />
+            <Button className="bg-red-500 hover:bg-red-600 text-white px-6 md:px-8 py-3 rounded-lg transform transition-all duration-300 hover:scale-105 hover:shadow-xl hover:shadow-red-500/25 group">
+              <span>View All Integrations</span>
+              <ArrowRight className="ml-2 w-4 h-4 group-hover:translate-x-1 transition-transform duration-300" />
             </Button>
           </motion.div>
 
-          <div className="max-w-4xl mx-auto grid grid-cols-2 md:grid-cols-3 gap-6">
+          <div className="max-w-4xl mx-auto grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 md:gap-6">
             {integrations.map((integration, index) => (
               <motion.div
                 key={index}
@@ -232,10 +232,10 @@ export function FeaturesSection() {
                 whileInView={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.4, delay: index * 0.1 }}
                 viewport={{ once: true }}
-                className="bg-gray-900/50 border border-gray-800 rounded-lg p-4 text-center hover:border-red-500/30 transition-all duration-300"
+                className="bg-gray-900/50 border border-gray-800 rounded-lg p-4 text-center hover:border-red-500/30 transition-all duration-300 transform hover:scale-105 hover:shadow-lg group cursor-pointer"
               >
-                <h4 className="font-medium text-white mb-2">{integration.name}</h4>
-                <p className="text-sm text-gray-400">{integration.description}</p>
+                <h4 className="font-medium text-white mb-2 group-hover:text-red-100 transition-colors duration-300">{integration.name}</h4>
+                <p className="text-sm text-gray-400 group-hover:text-gray-300 transition-colors duration-300">{integration.description}</p>
               </motion.div>
             ))}
           </div>
@@ -252,12 +252,12 @@ export function FeaturesSection() {
             viewport={{ once: true }}
             className="text-center mb-16"
           >
-            <h2 className="text-4xl md:text-5xl font-bold text-white mb-8">
+            <h2 className="text-3xl md:text-4xl lg:text-5xl font-bold text-white mb-6 md:mb-8">
               Built for serious goal achievers
             </h2>
           </motion.div>
 
-          <div className="max-w-6xl mx-auto grid md:grid-cols-3 gap-8">
+          <div className="max-w-6xl mx-auto grid grid-cols-1 md:grid-cols-3 gap-6 md:gap-8">
             {coreQualities.map((quality, index) => (
               <motion.div
                 key={index}
@@ -265,23 +265,23 @@ export function FeaturesSection() {
                 whileInView={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.6, delay: index * 0.1 }}
                 viewport={{ once: true }}
-                className="text-center space-y-6 bg-gray-900/50 border border-gray-800 rounded-xl p-8 hover:border-red-500/30 transition-all duration-300"
+                className="text-center space-y-6 bg-gray-900/50 border border-gray-800 rounded-xl p-6 md:p-8 hover:border-red-500/30 transition-all duration-500 transform hover:scale-105 hover:shadow-xl group cursor-pointer"
               >
-                <div className="w-16 h-16 bg-red-500/20 rounded-lg flex items-center justify-center mx-auto">
-                  <quality.icon className="w-8 h-8 text-red-400" />
+                <div className="w-16 h-16 bg-red-500/20 rounded-lg flex items-center justify-center mx-auto group-hover:bg-red-500/30 group-hover:scale-110 transition-all duration-300">
+                  <quality.icon className="w-8 h-8 text-red-400 group-hover:text-red-300 transition-colors duration-300" />
                 </div>
                 
-                <h3 className="text-xl font-bold text-white">
+                <h3 className="text-lg md:text-xl font-bold text-white group-hover:text-red-100 transition-colors duration-300">
                   {quality.title}
                 </h3>
                 
-                <p className="text-gray-400 leading-relaxed">
+                <p className="text-gray-400 leading-relaxed group-hover:text-gray-300 transition-colors duration-300">
                   {quality.description}
                 </p>
 
                 <div className="flex flex-wrap justify-center gap-2">
                   {quality.tags.map((tag, tagIndex) => (
-                    <span key={tagIndex} className="px-3 py-1 bg-gray-800 rounded-full text-xs text-gray-300">
+                    <span key={tagIndex} className="px-3 py-1 bg-gray-800 rounded-full text-xs text-gray-300 group-hover:bg-red-500/20 group-hover:text-red-300 transition-all duration-300">
                       {tag}
                     </span>
                   ))}
@@ -289,10 +289,10 @@ export function FeaturesSection() {
 
                 <Button 
                   variant="outline" 
-                  className="border-gray-600 text-gray-300 hover:bg-red-500 hover:text-white hover:border-red-500 transition-all duration-300"
+                  className="border-gray-600 text-gray-300 hover:bg-red-500 hover:text-white hover:border-red-500 transition-all duration-300 transform hover:scale-105 group-hover:shadow-lg"
                 >
-                  Learn More
-                  <ArrowRight className="ml-2 w-4 h-4" />
+                  <span>Learn More</span>
+                  <ArrowRight className="ml-2 w-4 h-4 group-hover:translate-x-1 transition-transform duration-300" />
                 </Button>
               </motion.div>
             ))}

@@ -60,10 +60,10 @@ export function FAQSection() {
           <h3 className="text-sm font-semibold text-red-400 mb-4 tracking-wider">
             FREQUENTLY ASKED QUESTIONS
           </h3>
-          <h2 className="text-4xl md:text-5xl font-bold text-white mb-8">
+          <h2 className="text-3xl md:text-4xl lg:text-5xl font-bold text-white mb-6 md:mb-8">
             Everything you need to know about TodoAI
           </h2>
-          <p className="text-xl text-gray-400 max-w-2xl mx-auto">
+          <p className="text-lg md:text-xl text-gray-400 max-w-2xl mx-auto">
             Have questions? We've got answers. Here are the most common questions about how TodoAI works.
           </p>
         </motion.div>
@@ -86,12 +86,12 @@ export function FAQSection() {
                 >
                   <AccordionItem 
                     value={`item-${index}`}
-                    className="bg-gray-900/50 border border-gray-800 rounded-lg px-6 hover:bg-gray-800/50 hover:border-red-500/30 transition-all duration-300"
+                    className="bg-gray-900/50 border border-gray-800 rounded-lg px-4 md:px-6 hover:bg-gray-800/50 hover:border-red-500/30 transition-all duration-500 transform hover:scale-[1.01] group"
                   >
-                    <AccordionTrigger className="text-white text-lg font-medium hover:text-gray-300 py-6 text-left">
+                    <AccordionTrigger className="text-white text-base md:text-lg font-medium hover:text-gray-300 py-4 md:py-6 text-left group-hover:text-red-100 transition-colors duration-300">
                       {faq.question}
                     </AccordionTrigger>
-                    <AccordionContent className="text-gray-400 text-base leading-relaxed pb-6">
+                    <AccordionContent className="text-gray-400 text-sm md:text-base leading-relaxed pb-4 md:pb-6 group-hover:text-gray-300 transition-colors duration-300">
                       {faq.answer}
                     </AccordionContent>
                   </AccordionItem>
