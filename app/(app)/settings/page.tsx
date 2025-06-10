@@ -2,124 +2,107 @@
 
 import { useState } from "react";
 import { motion } from "framer-motion";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Switch } from "@/components/ui/switch";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Badge } from "@/components/ui/badge";
-import { Separator } from "@/components/ui/separator";
+import { useRouter } from "next/navigation";
 import { 
   User, 
+  Settings, 
   Bell, 
-  Palette, 
   Shield, 
-  Download, 
-  Trash2,
-  Camera,
-  Mail,
-  Phone,
-  MapPin,
-  Calendar,
-  Clock,
-  Zap,
-  Smartphone,
+  Moon, 
+  Sun, 
+  Monitor,
   Globe,
-  Github,
-  Twitter,
-  Linkedin,
+  Smartphone,
+  Mail,
+  Lock,
+  Eye,
+  EyeOff,
   Save,
-  Settings as SettingsIcon,
-  Moon,
-  Sun,
-  Volume2,
-  VolumeX
+  Upload,
+  Trash2,
+  LogOut,
+  AlertTriangle,
+  CheckCircle,
+  Clock,
+  Target,
+  Calendar,
+  Zap
 } from "lucide-react";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import { Switch } from "@/components/ui/switch";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { Badge } from "@/components/ui/badge";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Separator } from "@/components/ui/separator";
 
 export default function SettingsPage() {
-  const [isDirty, setIsDirty] = useState(false);
-  const [isLoading, setIsLoading] = useState(false);
-
-  // Profile Settings
-  const [profile, setProfile] = useState({
-    name: "John Doe",
-    email: "john@example.com",
-    bio: "Passionate about personal growth and productivity. Always learning, always building.",
-    location: "San Francisco, CA",
-    timezone: "Pacific/Los_Angeles",
-    website: "https://johndoe.dev"
-  });
-
-  // Notification Settings
-  const [notifications, setNotifications] = useState({
-    email: {
-      daily_digest: true,
-      goal_reminders: true,
-      achievement_alerts: true,
-      weekly_reports: false
-    },
-    push: {
-      task_reminders: true,
-      goal_deadlines: true,
-      motivational_quotes: false,
-      social_updates: false
-    },
-    sound: {
-      enabled: true,
-      volume: 80
-    }
-  });
-
-  // Appearance Settings
-  const [appearance, setAppearance] = useState({
+  const router = useRouter();
+  const [activeTab, setActiveTab] = useState("profile");
+  const [showPassword, setShowPassword] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
+  const [settings, setSettings] = useState({
+    // Profile settings
+    name: "Alex Johnson",
+    email: "alex.johnson@example.com",
+    bio: "Passionate learner focused on personal growth and skill development.",
+    timezone: "America/New_York",
+    language: "en",
+    
+    // Notification settings
+    emailNotifications: true,
+    pushNotifications: true,
+    goalReminders: true,
+    weeklyProgress: true,
+    achievements: true,
+    
+    // Privacy settings
+    profileVisibility: "private",
+    dataSharing: false,
+    analytics: true,
+    
+    // Appearance settings
     theme: "dark",
-    accent_color: "red",
-    compact_mode: false,
-    animations: true
-  });
-
-  // Privacy Settings
-  const [privacy, setPrivacy] = useState({
-    profile_visibility: "private",
-    goal_sharing: false,
-    analytics_tracking: true,
-    data_export_enabled: true
+    compactMode: false,
+    animations: true,
+    
+    // Goal settings
+    defaultGoalDuration: "30",
+    defaultTimePerDay: 1,
+    workingDays: ["monday", "tuesday", "wednesday", "thursday", "friday"],
+    reminderTime: "09:00"
   });
 
   const handleSave = async () => {
-    setIsLoading(true);
+    setIsSaving(true);
     // Simulate API call
     setTimeout(() => {
-      setIsLoading(false);
-      setIsDirty(false);
-      console.log("Settings saved!");
+      setIsSaving(false);
+      // Show success message
     }, 1500);
   };
 
-  const handleProfileChange = (field: string, value: string) => {
-    setProfile(prev => ({ ...prev, [field]: value }));
-    setIsDirty(true);
+  const handleLogout = () => {
+    // Handle logout logic
+    router.push("/");
   };
 
-  const timezones = [
-    "Pacific/Los_Angeles",
-    "America/New_York",
-    "Europe/London",
-    "Asia/Tokyo",
-    "Australia/Sydney"
-  ];
-
-  const accentColors = [
-    { name: "Red", value: "red", class: "bg-red-500" },
-    { name: "Blue", value: "blue", class: "bg-blue-500" },
-    { name: "Green", value: "green", class: "bg-green-500" },
-    { name: "Purple", value: "purple", class: "bg-purple-500" },
-    { name: "Orange", value: "orange", class: "bg-orange-500" },
-    { name: "Pink", value: "pink", class: "bg-pink-500" }
+  const stats = [
+    { label: "Goals Created", value: "12", icon: Target, color: "text-purple-400" },
+    { label: "Goals Completed", value: "8", icon: CheckCircle, color: "text-green-400" },
+    { label: "Total Hours", value: "245", icon: Clock, color: "text-blue-400" },
+    { label: "Current Streak", value: "15 days", icon: Zap, color: "text-yellow-400" }
   ];
 
   return (
@@ -133,54 +116,52 @@ export default function SettingsPage() {
       >
         <div>
           <h1 className="text-3xl font-bold text-white flex items-center gap-3">
-            <SettingsIcon className="w-8 h-8 text-purple-400" />
+            <Settings className="w-8 h-8 text-purple-400" />
             Settings
           </h1>
           <p className="text-gray-400 mt-2">
-            Customize your TodoAI experience and manage your preferences
+            Manage your account preferences and goal settings
           </p>
         </div>
-        
-        {isDirty && (
-          <motion.div
-            initial={{ opacity: 0, scale: 0.95 }}
-            animate={{ opacity: 1, scale: 1 }}
-            transition={{ duration: 0.2 }}
-          >
-            <Button 
-              onClick={handleSave} 
-              disabled={isLoading}
-              className="bg-purple-500 hover:bg-purple-600 text-white"
-            >
-              <Save className="w-4 h-4 mr-2" />
-              {isLoading ? "Saving..." : "Save Changes"}
-            </Button>
-          </motion.div>
-        )}
       </motion.div>
 
+      {/* User Stats */}
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.6, delay: 0.1 }}
+        className="grid grid-cols-1 md:grid-cols-4 gap-6"
       >
-        <Tabs defaultValue="profile" className="space-y-6">
-          <TabsList className="bg-gray-800/50 border border-gray-700 p-1">
-            <TabsTrigger value="profile" className="data-[state=active]:bg-gray-700">
-              <User className="w-4 h-4 mr-2" />
+        {stats.map((stat, index) => (
+          <Card key={index} className="bg-gray-900/50 border-gray-700">
+            <CardContent className="p-6 text-center">
+              <stat.icon className={`w-8 h-8 mx-auto mb-3 ${stat.color}`} />
+              <p className="text-2xl font-bold text-white">{stat.value}</p>
+              <p className="text-gray-400 text-sm">{stat.label}</p>
+            </CardContent>
+          </Card>
+        ))}
+      </motion.div>
+
+      {/* Settings Tabs */}
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.6, delay: 0.2 }}
+      >
+        <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
+          <TabsList className="grid w-full grid-cols-4 bg-gray-800/50 border border-gray-700">
+            <TabsTrigger value="profile" className="data-[state=active]:bg-purple-500/20 data-[state=active]:text-purple-300">
               Profile
             </TabsTrigger>
-            <TabsTrigger value="notifications" className="data-[state=active]:bg-gray-700">
-              <Bell className="w-4 h-4 mr-2" />
+            <TabsTrigger value="notifications" className="data-[state=active]:bg-purple-500/20 data-[state=active]:text-purple-300">
               Notifications
             </TabsTrigger>
-            <TabsTrigger value="appearance" className="data-[state=active]:bg-gray-700">
-              <Palette className="w-4 h-4 mr-2" />
-              Appearance
+            <TabsTrigger value="preferences" className="data-[state=active]:bg-purple-500/20 data-[state=active]:text-purple-300">
+              Preferences
             </TabsTrigger>
-            <TabsTrigger value="privacy" className="data-[state=active]:bg-gray-700">
-              <Shield className="w-4 h-4 mr-2" />
-              Privacy
+            <TabsTrigger value="security" className="data-[state=active]:bg-purple-500/20 data-[state=active]:text-purple-300">
+              Security
             </TabsTrigger>
           </TabsList>
 
@@ -188,83 +169,55 @@ export default function SettingsPage() {
           <TabsContent value="profile" className="space-y-6">
             <Card className="bg-gray-900/50 border-gray-700">
               <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <User className="w-5 h-5 text-blue-400" />
+                <CardTitle className="flex items-center gap-2 text-white">
+                  <User className="w-5 h-5 text-purple-400" />
                   Profile Information
                 </CardTitle>
               </CardHeader>
               <CardContent className="space-y-6">
                 {/* Avatar Section */}
                 <div className="flex items-center gap-6">
-                  <div className="relative">
-                    <Avatar className="w-20 h-20 border-2 border-gray-600">
-                      <AvatarFallback className="bg-gray-800 text-gray-300 text-2xl">
-                        JD
-                      </AvatarFallback>
-                    </Avatar>
-                    <Button
-                      size="sm"
-                      className="absolute -bottom-2 -right-2 w-8 h-8 rounded-full bg-blue-500 hover:bg-blue-600"
-                    >
-                      <Camera className="w-4 h-4" />
+                  <Avatar className="w-20 h-20">
+                    <AvatarImage src="/avatars/user.png" />
+                    <AvatarFallback className="bg-purple-500/20 text-purple-400 text-xl">
+                      {settings.name.split(' ').map(n => n[0]).join('')}
+                    </AvatarFallback>
+                  </Avatar>
+                  <div className="space-y-2">
+                    <Button variant="outline" className="border-gray-600 text-gray-300 hover:bg-gray-700">
+                      <Upload className="w-4 h-4 mr-2" />
+                      Upload Photo
                     </Button>
-                  </div>
-                  <div>
-                    <h3 className="text-lg font-semibold text-white">{profile.name}</h3>
-                    <p className="text-gray-400">{profile.email}</p>
-                    <Badge variant="secondary" className="mt-2">
-                      Premium Member
-                    </Badge>
+                    <Button variant="ghost" className="text-red-400 hover:text-red-300 hover:bg-red-500/10">
+                      <Trash2 className="w-4 h-4 mr-2" />
+                      Remove
+                    </Button>
                   </div>
                 </div>
 
                 <Separator className="bg-gray-700" />
 
-                {/* Basic Info */}
+                {/* Personal Info */}
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   <div className="space-y-2">
                     <Label htmlFor="name" className="text-gray-300">Full Name</Label>
                     <Input
                       id="name"
-                      value={profile.name}
-                      onChange={(e) => handleProfileChange("name", e.target.value)}
-                      className="bg-gray-800 border-gray-600 text-white"
+                      value={settings.name}
+                      onChange={(e) => setSettings(prev => ({ ...prev, name: e.target.value }))}
+                      className="bg-gray-800/50 border-gray-600 text-white"
                     />
                   </div>
+                  
                   <div className="space-y-2">
                     <Label htmlFor="email" className="text-gray-300">Email Address</Label>
                     <Input
                       id="email"
                       type="email"
-                      value={profile.email}
-                      onChange={(e) => handleProfileChange("email", e.target.value)}
-                      className="bg-gray-800 border-gray-600 text-white"
+                      value={settings.email}
+                      onChange={(e) => setSettings(prev => ({ ...prev, email: e.target.value }))}
+                      className="bg-gray-800/50 border-gray-600 text-white"
                     />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="location" className="text-gray-300">Location</Label>
-                    <Input
-                      id="location"
-                      value={profile.location}
-                      onChange={(e) => handleProfileChange("location", e.target.value)}
-                      placeholder="City, Country"
-                      className="bg-gray-800 border-gray-600 text-white"
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="timezone" className="text-gray-300">Timezone</Label>
-                    <Select value={profile.timezone} onValueChange={(value) => handleProfileChange("timezone", value)}>
-                      <SelectTrigger className="bg-gray-800 border-gray-600 text-white">
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent className="bg-gray-800 border-gray-600">
-                        {timezones.map(tz => (
-                          <SelectItem key={tz} value={tz} className="text-white hover:bg-gray-700">
-                            {tz.replace("_", " ")}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
                   </div>
                 </div>
 
@@ -272,23 +225,47 @@ export default function SettingsPage() {
                   <Label htmlFor="bio" className="text-gray-300">Bio</Label>
                   <Textarea
                     id="bio"
-                    value={profile.bio}
-                    onChange={(e) => handleProfileChange("bio", e.target.value)}
+                    value={settings.bio}
+                    onChange={(e) => setSettings(prev => ({ ...prev, bio: e.target.value }))}
+                    className="bg-gray-800/50 border-gray-600 text-white min-h-[100px]"
                     placeholder="Tell us about yourself..."
-                    className="bg-gray-800 border-gray-600 text-white"
-                    rows={3}
                   />
                 </div>
 
-                <div className="space-y-2">
-                  <Label htmlFor="website" className="text-gray-300">Website</Label>
-                  <Input
-                    id="website"
-                    value={profile.website}
-                    onChange={(e) => handleProfileChange("website", e.target.value)}
-                    placeholder="https://your-website.com"
-                    className="bg-gray-800 border-gray-600 text-white"
-                  />
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div className="space-y-2">
+                    <Label className="text-gray-300">Timezone</Label>
+                    <Select value={settings.timezone} onValueChange={(value) => setSettings(prev => ({ ...prev, timezone: value }))}>
+                      <SelectTrigger className="bg-gray-800/50 border-gray-600 text-white">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent className="bg-gray-800 border-gray-600">
+                        <SelectItem value="America/New_York">Eastern Time (UTC-5)</SelectItem>
+                        <SelectItem value="America/Chicago">Central Time (UTC-6)</SelectItem>
+                        <SelectItem value="America/Denver">Mountain Time (UTC-7)</SelectItem>
+                        <SelectItem value="America/Los_Angeles">Pacific Time (UTC-8)</SelectItem>
+                        <SelectItem value="Europe/London">London (UTC+0)</SelectItem>
+                        <SelectItem value="Europe/Paris">Paris (UTC+1)</SelectItem>
+                        <SelectItem value="Asia/Tokyo">Tokyo (UTC+9)</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  
+                  <div className="space-y-2">
+                    <Label className="text-gray-300">Language</Label>
+                    <Select value={settings.language} onValueChange={(value) => setSettings(prev => ({ ...prev, language: value }))}>
+                      <SelectTrigger className="bg-gray-800/50 border-gray-600 text-white">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent className="bg-gray-800 border-gray-600">
+                        <SelectItem value="en">English</SelectItem>
+                        <SelectItem value="es">Spanish</SelectItem>
+                        <SelectItem value="fr">French</SelectItem>
+                        <SelectItem value="de">German</SelectItem>
+                        <SelectItem value="ja">Japanese</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
                 </div>
               </CardContent>
             </Card>
@@ -296,302 +273,285 @@ export default function SettingsPage() {
 
           {/* Notifications Tab */}
           <TabsContent value="notifications" className="space-y-6">
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-              {/* Email Notifications */}
-              <Card className="bg-gray-900/50 border-gray-700">
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2">
-                    <Mail className="w-5 h-5 text-green-400" />
-                    Email Notifications
-                  </CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  {Object.entries(notifications.email).map(([key, value]) => (
-                    <div key={key} className="flex items-center justify-between">
-                      <div>
-                        <Label className="text-gray-300 capitalize">
-                          {key.replace(/_/g, " ")}
-                        </Label>
-                        <p className="text-sm text-gray-400">
-                          {key === "daily_digest" && "Daily summary of your progress"}
-                          {key === "goal_reminders" && "Reminders about your goals"}
-                          {key === "achievement_alerts" && "Notifications when you achieve milestones"}
-                          {key === "weekly_reports" && "Weekly progress reports"}
-                        </p>
-                      </div>
-                      <Switch 
-                        checked={value} 
-                        onCheckedChange={(checked) => {
-                          setNotifications(prev => ({
-                            ...prev,
-                            email: { ...prev.email, [key]: checked }
-                          }));
-                          setIsDirty(true);
-                        }}
-                      />
-                    </div>
-                  ))}
-                </CardContent>
-              </Card>
-
-              {/* Push Notifications */}
-              <Card className="bg-gray-900/50 border-gray-700">
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2">
-                    <Smartphone className="w-5 h-5 text-blue-400" />
-                    Push Notifications
-                  </CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  {Object.entries(notifications.push).map(([key, value]) => (
-                    <div key={key} className="flex items-center justify-between">
-                      <div>
-                        <Label className="text-gray-300 capitalize">
-                          {key.replace(/_/g, " ")}
-                        </Label>
-                        <p className="text-sm text-gray-400">
-                          {key === "task_reminders" && "Reminders for upcoming tasks"}
-                          {key === "goal_deadlines" && "Alerts for goal deadlines"}
-                          {key === "motivational_quotes" && "Daily inspirational messages"}
-                          {key === "social_updates" && "Updates from friends and team"}
-                        </p>
-                      </div>
-                      <Switch 
-                        checked={value} 
-                        onCheckedChange={(checked) => {
-                          setNotifications(prev => ({
-                            ...prev,
-                            push: { ...prev.push, [key]: checked }
-                          }));
-                          setIsDirty(true);
-                        }}
-                      />
-                    </div>
-                  ))}
-                </CardContent>
-              </Card>
-            </div>
-
-            {/* Sound Settings */}
             <Card className="bg-gray-900/50 border-gray-700">
               <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Volume2 className="w-5 h-5 text-orange-400" />
-                  Sound Settings
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <Label className="text-gray-300">Enable Sounds</Label>
-                    <p className="text-sm text-gray-400">Play notification sounds</p>
-                  </div>
-                  <Switch 
-                    checked={notifications.sound.enabled} 
-                    onCheckedChange={(checked) => {
-                      setNotifications(prev => ({
-                        ...prev,
-                        sound: { ...prev.sound, enabled: checked }
-                      }));
-                      setIsDirty(true);
-                    }}
-                  />
-                </div>
-                
-                {notifications.sound.enabled && (
-                  <div className="space-y-2">
-                    <Label className="text-gray-300">Volume: {notifications.sound.volume}%</Label>
-                    <input
-                      type="range"
-                      min="0"
-                      max="100"
-                      value={notifications.sound.volume}
-                      onChange={(e) => {
-                        setNotifications(prev => ({
-                          ...prev,
-                          sound: { ...prev.sound, volume: parseInt(e.target.value) }
-                        }));
-                        setIsDirty(true);
-                      }}
-                      className="w-full h-2 bg-gray-700 rounded-lg appearance-none cursor-pointer"
-                    />
-                  </div>
-                )}
-              </CardContent>
-            </Card>
-          </TabsContent>
-
-          {/* Appearance Tab */}
-          <TabsContent value="appearance" className="space-y-6">
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-              {/* Theme Settings */}
-              <Card className="bg-gray-900/50 border-gray-700">
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2">
-                    <Moon className="w-5 h-5 text-purple-400" />
-                    Theme Preferences
-                  </CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  <div>
-                    <Label className="text-gray-300 mb-3 block">Color Theme</Label>
-                    <div className="space-y-2">
-                      {["dark", "light", "auto"].map(theme => (
-                        <div key={theme} className="flex items-center space-x-2">
-                          <input
-                            type="radio"
-                            id={theme}
-                            name="theme"
-                            value={theme}
-                            checked={appearance.theme === theme}
-                            onChange={(e) => {
-                              setAppearance(prev => ({ ...prev, theme: e.target.value }));
-                              setIsDirty(true);
-                            }}
-                            className="w-4 h-4 text-purple-600"
-                          />
-                          <Label htmlFor={theme} className="text-gray-300 capitalize flex items-center gap-2">
-                            {theme === "dark" && <Moon className="w-4 h-4" />}
-                            {theme === "light" && <Sun className="w-4 h-4" />}
-                            {theme === "auto" && <Globe className="w-4 h-4" />}
-                            {theme}
-                          </Label>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-
-                  <Separator className="bg-gray-700" />
-
-                  <div>
-                    <Label className="text-gray-300 mb-3 block">Accent Color</Label>
-                    <div className="grid grid-cols-3 gap-3">
-                      {accentColors.map(color => (
-                        <button
-                          key={color.value}
-                          onClick={() => {
-                            setAppearance(prev => ({ ...prev, accent_color: color.value }));
-                            setIsDirty(true);
-                          }}
-                          className={`
-                            flex items-center gap-2 p-3 rounded-lg border transition-all
-                            ${appearance.accent_color === color.value 
-                              ? 'border-white bg-gray-700' 
-                              : 'border-gray-600 bg-gray-800 hover:bg-gray-700'
-                            }
-                          `}
-                        >
-                          <div className={`w-4 h-4 rounded-full ${color.class}`} />
-                          <span className="text-sm text-gray-300">{color.name}</span>
-                        </button>
-                      ))}
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-
-              {/* UI Preferences */}
-              <Card className="bg-gray-900/50 border-gray-700">
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2">
-                    <Zap className="w-5 h-5 text-yellow-400" />
-                    UI Preferences
-                  </CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <Label className="text-gray-300">Compact Mode</Label>
-                      <p className="text-sm text-gray-400">Reduce spacing and padding</p>
-                    </div>
-                    <Switch 
-                      checked={appearance.compact_mode} 
-                      onCheckedChange={(checked) => {
-                        setAppearance(prev => ({ ...prev, compact_mode: checked }));
-                        setIsDirty(true);
-                      }}
-                    />
-                  </div>
-
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <Label className="text-gray-300">Animations</Label>
-                      <p className="text-sm text-gray-400">Enable smooth transitions and effects</p>
-                    </div>
-                    <Switch 
-                      checked={appearance.animations} 
-                      onCheckedChange={(checked) => {
-                        setAppearance(prev => ({ ...prev, animations: checked }));
-                        setIsDirty(true);
-                      }}
-                    />
-                  </div>
-                </CardContent>
-              </Card>
-            </div>
-          </TabsContent>
-
-          {/* Privacy Tab */}
-          <TabsContent value="privacy" className="space-y-6">
-            <Card className="bg-gray-900/50 border-gray-700">
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Shield className="w-5 h-5 text-red-400" />
-                  Privacy & Security
+                <CardTitle className="flex items-center gap-2 text-white">
+                  <Bell className="w-5 h-5 text-blue-400" />
+                  Notification Preferences
                 </CardTitle>
               </CardHeader>
               <CardContent className="space-y-6">
                 <div className="flex items-center justify-between">
                   <div>
-                    <Label className="text-gray-300">Profile Visibility</Label>
-                    <p className="text-sm text-gray-400">Control who can see your profile</p>
+                    <Label className="text-gray-300 font-medium">Email Notifications</Label>
+                    <p className="text-sm text-gray-400">Receive notifications via email</p>
                   </div>
-                  <Select 
-                    value={privacy.profile_visibility} 
-                    onValueChange={(value) => {
-                      setPrivacy(prev => ({ ...prev, profile_visibility: value }));
-                      setIsDirty(true);
-                    }}
-                  >
-                    <SelectTrigger className="w-32 bg-gray-800 border-gray-600 text-white">
+                  <Switch
+                    checked={settings.emailNotifications}
+                    onCheckedChange={(checked) => setSettings(prev => ({ ...prev, emailNotifications: checked }))}
+                  />
+                </div>
+
+                <Separator className="bg-gray-700" />
+
+                <div className="flex items-center justify-between">
+                  <div>
+                    <Label className="text-gray-300 font-medium">Push Notifications</Label>
+                    <p className="text-sm text-gray-400">Receive push notifications on your device</p>
+                  </div>
+                  <Switch
+                    checked={settings.pushNotifications}
+                    onCheckedChange={(checked) => setSettings(prev => ({ ...prev, pushNotifications: checked }))}
+                  />
+                </div>
+
+                <Separator className="bg-gray-700" />
+
+                <div className="flex items-center justify-between">
+                  <div>
+                    <Label className="text-gray-300 font-medium">Goal Reminders</Label>
+                    <p className="text-sm text-gray-400">Daily reminders to work on your goals</p>
+                  </div>
+                  <Switch
+                    checked={settings.goalReminders}
+                    onCheckedChange={(checked) => setSettings(prev => ({ ...prev, goalReminders: checked }))}
+                  />
+                </div>
+
+                <Separator className="bg-gray-700" />
+
+                <div className="flex items-center justify-between">
+                  <div>
+                    <Label className="text-gray-300 font-medium">Weekly Progress</Label>
+                    <p className="text-sm text-gray-400">Weekly summary of your progress</p>
+                  </div>
+                  <Switch
+                    checked={settings.weeklyProgress}
+                    onCheckedChange={(checked) => setSettings(prev => ({ ...prev, weeklyProgress: checked }))}
+                  />
+                </div>
+
+                <Separator className="bg-gray-700" />
+
+                <div className="flex items-center justify-between">
+                  <div>
+                    <Label className="text-gray-300 font-medium">Achievement Notifications</Label>
+                    <p className="text-sm text-gray-400">Celebrate when you complete milestones</p>
+                  </div>
+                  <Switch
+                    checked={settings.achievements}
+                    onCheckedChange={(checked) => setSettings(prev => ({ ...prev, achievements: checked }))}
+                  />
+                </div>
+
+                {settings.goalReminders && (
+                  <>
+                    <Separator className="bg-gray-700" />
+                    <div className="space-y-2">
+                      <Label className="text-gray-300">Reminder Time</Label>
+                      <Input
+                        type="time"
+                        value={settings.reminderTime}
+                        onChange={(e) => setSettings(prev => ({ ...prev, reminderTime: e.target.value }))}
+                        className="bg-gray-800/50 border-gray-600 text-white"
+                      />
+                    </div>
+                  </>
+                )}
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          {/* Preferences Tab */}
+          <TabsContent value="preferences" className="space-y-6">
+            <Card className="bg-gray-900/50 border-gray-700">
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2 text-white">
+                  <Monitor className="w-5 h-5 text-green-400" />
+                  App Preferences
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-6">
+                <div className="space-y-2">
+                  <Label className="text-gray-300">Theme</Label>
+                  <Select value={settings.theme} onValueChange={(value) => setSettings(prev => ({ ...prev, theme: value }))}>
+                    <SelectTrigger className="bg-gray-800/50 border-gray-600 text-white">
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent className="bg-gray-800 border-gray-600">
-                      <SelectItem value="private" className="text-white hover:bg-gray-700">Private</SelectItem>
-                      <SelectItem value="friends" className="text-white hover:bg-gray-700">Friends</SelectItem>
-                      <SelectItem value="public" className="text-white hover:bg-gray-700">Public</SelectItem>
+                      <SelectItem value="dark">Dark</SelectItem>
+                      <SelectItem value="light">Light</SelectItem>
+                      <SelectItem value="system">System</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
 
                 <Separator className="bg-gray-700" />
 
-                <div className="space-y-4">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <Label className="text-gray-300">Goal Sharing</Label>
-                      <p className="text-sm text-gray-400">Allow others to see your goals</p>
-                    </div>
-                    <Switch 
-                      checked={privacy.goal_sharing} 
-                      onCheckedChange={(checked) => {
-                        setPrivacy(prev => ({ ...prev, goal_sharing: checked }));
-                        setIsDirty(true);
-                      }}
+                <div className="flex items-center justify-between">
+                  <div>
+                    <Label className="text-gray-300 font-medium">Compact Mode</Label>
+                    <p className="text-sm text-gray-400">Use less spacing in the interface</p>
+                  </div>
+                  <Switch
+                    checked={settings.compactMode}
+                    onCheckedChange={(checked) => setSettings(prev => ({ ...prev, compactMode: checked }))}
+                  />
+                </div>
+
+                <Separator className="bg-gray-700" />
+
+                <div className="flex items-center justify-between">
+                  <div>
+                    <Label className="text-gray-300 font-medium">Animations</Label>
+                    <p className="text-sm text-gray-400">Enable smooth animations and transitions</p>
+                  </div>
+                  <Switch
+                    checked={settings.animations}
+                    onCheckedChange={(checked) => setSettings(prev => ({ ...prev, animations: checked }))}
+                  />
+                </div>
+
+                <Separator className="bg-gray-700" />
+
+                <h3 className="text-lg font-semibold text-white">Goal Defaults</h3>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div className="space-y-2">
+                    <Label className="text-gray-300">Default Goal Duration</Label>
+                    <Select value={settings.defaultGoalDuration} onValueChange={(value) => setSettings(prev => ({ ...prev, defaultGoalDuration: value }))}>
+                      <SelectTrigger className="bg-gray-800/50 border-gray-600 text-white">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent className="bg-gray-800 border-gray-600">
+                        <SelectItem value="7">1 Week</SelectItem>
+                        <SelectItem value="14">2 Weeks</SelectItem>
+                        <SelectItem value="30">1 Month</SelectItem>
+                        <SelectItem value="60">2 Months</SelectItem>
+                        <SelectItem value="90">3 Months</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  
+                  <div className="space-y-2">
+                    <Label className="text-gray-300">Default Time Per Day (hours)</Label>
+                    <Input
+                      type="number"
+                      min="0.5"
+                      max="16"
+                      step="0.5"
+                      value={settings.defaultTimePerDay}
+                      onChange={(e) => setSettings(prev => ({ ...prev, defaultTimePerDay: parseFloat(e.target.value) }))}
+                      className="bg-gray-800/50 border-gray-600 text-white"
                     />
                   </div>
+                </div>
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          {/* Security Tab */}
+          <TabsContent value="security" className="space-y-6">
+            <Card className="bg-gray-900/50 border-gray-700">
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2 text-white">
+                  <Shield className="w-5 h-5 text-red-400" />
+                  Security & Privacy
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-6">
+                <div className="space-y-4">
+                  <h3 className="text-lg font-semibold text-white">Change Password</h3>
+                  <div className="space-y-4">
+                    <div className="space-y-2">
+                      <Label className="text-gray-300">Current Password</Label>
+                      <div className="relative">
+                        <Input
+                          type={showPassword ? "text" : "password"}
+                          className="bg-gray-800/50 border-gray-600 text-white pr-10"
+                          placeholder="Enter current password"
+                        />
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="sm"
+                          className="absolute right-0 top-0 h-full px-3 text-gray-400 hover:text-white"
+                          onClick={() => setShowPassword(!showPassword)}
+                        >
+                          {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                        </Button>
+                      </div>
+                    </div>
+                    
+                    <div className="space-y-2">
+                      <Label className="text-gray-300">New Password</Label>
+                      <Input
+                        type="password"
+                        className="bg-gray-800/50 border-gray-600 text-white"
+                        placeholder="Enter new password"
+                      />
+                    </div>
+                    
+                    <div className="space-y-2">
+                      <Label className="text-gray-300">Confirm New Password</Label>
+                      <Input
+                        type="password"
+                        className="bg-gray-800/50 border-gray-600 text-white"
+                        placeholder="Confirm new password"
+                      />
+                    </div>
+                    
+                    <Button className="bg-purple-500 hover:bg-purple-600 text-white">
+                      Update Password
+                    </Button>
+                  </div>
+                </div>
+
+                <Separator className="bg-gray-700" />
+
+                <div className="space-y-4">
+                  <h3 className="text-lg font-semibold text-white">Privacy Settings</h3>
+                  
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <Label className="text-gray-300 font-medium">Profile Visibility</Label>
+                      <p className="text-sm text-gray-400">Control who can see your profile</p>
+                    </div>
+                    <Select value={settings.profileVisibility} onValueChange={(value) => setSettings(prev => ({ ...prev, profileVisibility: value }))}>
+                      <SelectTrigger className="w-32 bg-gray-800/50 border-gray-600 text-white">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent className="bg-gray-800 border-gray-600">
+                        <SelectItem value="private">Private</SelectItem>
+                        <SelectItem value="friends">Friends</SelectItem>
+                        <SelectItem value="public">Public</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  <Separator className="bg-gray-700" />
 
                   <div className="flex items-center justify-between">
                     <div>
-                      <Label className="text-gray-300">Analytics Tracking</Label>
-                      <p className="text-sm text-gray-400">Help improve TodoAI with usage data</p>
+                      <Label className="text-gray-300 font-medium">Data Sharing</Label>
+                      <p className="text-sm text-gray-400">Share anonymized data to improve the app</p>
                     </div>
-                    <Switch 
-                      checked={privacy.analytics_tracking} 
-                      onCheckedChange={(checked) => {
-                        setPrivacy(prev => ({ ...prev, analytics_tracking: checked }));
-                        setIsDirty(true);
-                      }}
+                    <Switch
+                      checked={settings.dataSharing}
+                      onCheckedChange={(checked) => setSettings(prev => ({ ...prev, dataSharing: checked }))}
+                    />
+                  </div>
+
+                  <Separator className="bg-gray-700" />
+
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <Label className="text-gray-300 font-medium">Analytics</Label>
+                      <p className="text-sm text-gray-400">Allow us to collect usage analytics</p>
+                    </div>
+                    <Switch
+                      checked={settings.analytics}
+                      onCheckedChange={(checked) => setSettings(prev => ({ ...prev, analytics: checked }))}
                     />
                   </div>
                 </div>
@@ -599,34 +559,62 @@ export default function SettingsPage() {
                 <Separator className="bg-gray-700" />
 
                 <div className="space-y-4">
-                  <h4 className="text-lg font-semibold text-white">Data Management</h4>
+                  <h3 className="text-lg font-semibold text-white text-red-400">Danger Zone</h3>
                   
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <Label className="text-gray-300">Data Export</Label>
-                      <p className="text-sm text-gray-400">Download your data anytime</p>
+                  <div className="bg-red-500/10 border border-red-500/30 rounded-lg p-4">
+                    <div className="flex items-start gap-3">
+                      <AlertTriangle className="w-5 h-5 text-red-400 mt-0.5" />
+                      <div className="flex-1">
+                        <h4 className="font-medium text-red-400">Delete Account</h4>
+                        <p className="text-sm text-red-300/70 mt-1">
+                          Once you delete your account, there is no going back. Please be certain.
+                        </p>
+                        <Button variant="destructive" className="mt-3" size="sm">
+                          Delete Account
+                        </Button>
+                      </div>
                     </div>
-                    <Button variant="outline" className="border-gray-600 text-gray-300 hover:bg-gray-700">
-                      <Download className="w-4 h-4 mr-2" />
-                      Export Data
-                    </Button>
-                  </div>
-
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <Label className="text-gray-300 text-red-400">Delete Account</Label>
-                      <p className="text-sm text-gray-400">Permanently delete your account and data</p>
-                    </div>
-                    <Button variant="destructive" className="bg-red-600 hover:bg-red-700">
-                      <Trash2 className="w-4 h-4 mr-2" />
-                      Delete Account
-                    </Button>
                   </div>
                 </div>
               </CardContent>
             </Card>
           </TabsContent>
         </Tabs>
+      </motion.div>
+
+      {/* Action Buttons */}
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.6, delay: 0.3 }}
+        className="flex gap-4 justify-between"
+      >
+        <Button
+          variant="outline"
+          onClick={handleLogout}
+          className="border-red-600 text-red-400 hover:bg-red-500/10"
+        >
+          <LogOut className="w-4 h-4 mr-2" />
+          Sign Out
+        </Button>
+        
+        <Button
+          onClick={handleSave}
+          disabled={isSaving}
+          className="bg-purple-500 hover:bg-purple-600 text-white"
+        >
+          {isSaving ? (
+            <>
+              <CheckCircle className="w-4 h-4 mr-2 animate-spin" />
+              Saving...
+            </>
+          ) : (
+            <>
+              <Save className="w-4 h-4 mr-2" />
+              Save Changes
+            </>
+          )}
+        </Button>
       </motion.div>
     </div>
   );
