@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -8,6 +8,8 @@ import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Skeleton } from "@/components/ui/skeleton";
+import { EmptyState } from "@/components/ui/empty-state";
 import { 
   Target,
   Plus,
@@ -48,11 +50,112 @@ interface Goal {
   createdAt: string;
 }
 
+// Loading skeleton components
+const GoalCardSkeleton = () => (
+  <Card className="bg-gray-900/50 border-gray-700/50">
+    <CardHeader className="pb-4">
+      <div className="flex items-start justify-between">
+        <div className="flex items-center gap-3 flex-1">
+          <Skeleton className="w-4 h-4 rounded-full bg-gray-800" />
+          <div className="flex-1">
+            <Skeleton className="h-5 w-48 bg-gray-800 mb-2" />
+            <Skeleton className="h-4 w-24 bg-gray-800" />
+          </div>
+        </div>
+        <div className="flex items-center gap-2">
+          <Skeleton className="w-4 h-4 bg-gray-800" />
+          <Skeleton className="w-8 h-8 bg-gray-800" />
+        </div>
+      </div>
+    </CardHeader>
+    <CardContent className="space-y-4">
+      <Skeleton className="h-4 w-full bg-gray-800" />
+      <Skeleton className="h-4 w-3/4 bg-gray-800" />
+      
+      <div className="space-y-3">
+        <div className="flex items-center justify-between">
+          <Skeleton className="h-4 w-16 bg-gray-800" />
+          <Skeleton className="h-6 w-12 bg-gray-800" />
+        </div>
+        <Skeleton className="h-2 w-full bg-gray-800" />
+        <Skeleton className="h-3 w-32 bg-gray-800" />
+      </div>
+      
+      <div className="flex items-center justify-between">
+        <Skeleton className="h-4 w-24 bg-gray-800" />
+        <Skeleton className="h-6 w-20 bg-gray-800" />
+      </div>
+      
+      <div className="flex items-center gap-2 pt-2">
+        <Skeleton className="h-8 flex-1 bg-gray-800" />
+        <Skeleton className="h-8 w-10 bg-gray-800" />
+      </div>
+    </CardContent>
+  </Card>
+);
+
+const GoalsPageSkeleton = () => (
+  <div className="space-y-8">
+    {/* Header Skeleton */}
+    <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+      <div>
+        <Skeleton className="h-9 w-48 bg-gray-800 mb-2" />
+        <Skeleton className="h-5 w-64 bg-gray-800" />
+      </div>
+      <Skeleton className="h-10 w-32 bg-gray-800" />
+    </div>
+
+    {/* Stats Cards Skeleton */}
+    <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+      {[...Array(4)].map((_, i) => (
+        <Card key={i} className="bg-gray-900/50 border-gray-700/50">
+          <CardContent className="p-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <Skeleton className="h-4 w-20 bg-gray-800 mb-2" />
+                <Skeleton className="h-8 w-12 bg-gray-800" />
+              </div>
+              <Skeleton className="w-8 h-8 bg-gray-800" />
+            </div>
+          </CardContent>
+        </Card>
+      ))}
+    </div>
+
+    {/* Filters Skeleton */}
+    <div className="flex flex-col md:flex-row gap-4">
+      <Skeleton className="h-10 flex-1 bg-gray-800" />
+      <Skeleton className="h-10 w-40 bg-gray-800" />
+      <Skeleton className="h-10 w-32 bg-gray-800" />
+    </div>
+
+    {/* Goals Grid Skeleton */}
+    <div className="space-y-6">
+      <Skeleton className="h-10 w-80 bg-gray-800" />
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        {[...Array(6)].map((_, i) => (
+          <GoalCardSkeleton key={i} />
+        ))}
+      </div>
+    </div>
+  </div>
+);
+
 export default function GoalsPage() {
   const router = useRouter();
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedCategory, setSelectedCategory] = useState("all");
   const [selectedStatus, setSelectedStatus] = useState("all");
+  const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    // Simulate loading for 2 seconds
+    const loadingTimer = setTimeout(() => {
+      setIsLoading(false);
+    }, 2000);
+    
+    return () => clearTimeout(loadingTimer);
+  }, []);
   
   // Mock goal data
   const goals: Goal[] = [
@@ -135,6 +238,9 @@ export default function GoalsPage() {
       createdAt: "2024-01-20"
     }
   ];
+
+  // For demo purposes, uncomment the line below to test empty state
+  // const goals: Goal[] = [];
 
   const categories = ["all", ...Array.from(new Set(goals.map(goal => goal.category)))];
   const statuses = ["all", "active", "completed", "paused"];
@@ -271,6 +377,10 @@ export default function GoalsPage() {
     </motion.div>
   );
 
+  if (isLoading) {
+    return <GoalsPageSkeleton />;
+  }
+
   return (
     <div className="space-y-8">
       {/* Header */}
@@ -299,176 +409,207 @@ export default function GoalsPage() {
         </Button>
       </motion.div>
 
-      {/* Stats Cards */}
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.6, delay: 0.1 }}
-        className="grid grid-cols-1 md:grid-cols-4 gap-6"
-      >
-        <Card className="bg-blue-500/10 border-blue-500/20">
-          <CardContent className="p-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-blue-400 text-sm font-medium">Active Goals</p>
-                <p className="text-2xl font-bold text-white">{activeGoals.length}</p>
-              </div>
-              <Target className="w-8 h-8 text-blue-400" />
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card className="bg-green-500/10 border-green-500/20">
-          <CardContent className="p-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-green-400 text-sm font-medium">Completed</p>
-                <p className="text-2xl font-bold text-white">{completedGoals.length}</p>
-              </div>
-              <Trophy className="w-8 h-8 text-green-400" />
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card className="bg-orange-500/10 border-orange-500/20">
-          <CardContent className="p-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-orange-400 text-sm font-medium">Avg Progress</p>
-                <p className="text-2xl font-bold text-white">
-                  {Math.round(activeGoals.reduce((acc, goal) => acc + goal.progress, 0) / activeGoals.length)}%
-                </p>
-              </div>
-              <TrendingUp className="w-8 h-8 text-orange-400" />
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card className="bg-purple-500/10 border-purple-500/20">
-          <CardContent className="p-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-purple-400 text-sm font-medium">Total Tasks</p>
-                <p className="text-2xl font-bold text-white">
-                  {goals.reduce((acc, goal) => acc + goal.tasks.total, 0)}
-                </p>
-              </div>
-              <CheckCircle2 className="w-8 h-8 text-purple-400" />
-            </div>
-          </CardContent>
-        </Card>
-      </motion.div>
-
-      {/* Filters */}
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.6, delay: 0.2 }}
-        className="flex flex-col md:flex-row gap-4"
-      >
-        <div className="relative flex-1">
-          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
-          <Input
-            placeholder="Search goals..."
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            className="pl-10 bg-gray-800 border-gray-700 text-white"
-          />
-        </div>
-        
-        <select 
-          value={selectedCategory} 
-          onChange={(e) => setSelectedCategory(e.target.value)}
-          className="bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-white"
-        >
-          {categories.map(category => (
-            <option key={category} value={category}>
-              {category === "all" ? "All Categories" : category}
-            </option>
-          ))}
-        </select>
-
-        <select 
-          value={selectedStatus} 
-          onChange={(e) => setSelectedStatus(e.target.value)}
-          className="bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-white"
-        >
-          {statuses.map(status => (
-            <option key={status} value={status}>
-              {status === "all" ? "All Status" : status.charAt(0).toUpperCase() + status.slice(1)}
-            </option>
-          ))}
-        </select>
-      </motion.div>
-
-      {/* Goals Grid */}
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.6, delay: 0.3 }}
-        className="space-y-6"
-      >
-        <Tabs defaultValue="all" className="space-y-6">
-          <TabsList className="bg-gray-800/50 border border-gray-700 p-1">
-            <TabsTrigger value="all" className="data-[state=active]:bg-gray-700">
-              All Goals ({filteredGoals.length})
-            </TabsTrigger>
-            <TabsTrigger value="active" className="data-[state=active]:bg-gray-700">
-              Active ({activeGoals.length})
-            </TabsTrigger>
-            <TabsTrigger value="completed" className="data-[state=active]:bg-gray-700">
-              Completed ({completedGoals.length})
-            </TabsTrigger>
-          </TabsList>
-
-          <TabsContent value="all">
-            <AnimatePresence mode="wait">
-              {filteredGoals.length > 0 ? (
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                  {filteredGoals.map((goal) => (
-                    <GoalCard key={goal.id} goal={goal} />
-                  ))}
+      {goals.length === 0 ? (
+        <EmptyState
+          icon="🎯"
+          title="No goals yet"
+          description="Start your journey by creating your first goal."
+          action={{
+            label: "Create Goal",
+            href: "/create-goal"
+          }}
+          className="py-16"
+        />
+      ) : (
+        <>
+          {/* Stats Cards */}
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.6, delay: 0.1 }}
+            className="grid grid-cols-1 md:grid-cols-4 gap-6"
+          >
+            <Card className="bg-blue-500/10 border-blue-500/20">
+              <CardContent className="p-6">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-blue-400 text-sm font-medium">Active Goals</p>
+                    <p className="text-2xl font-bold text-white">{activeGoals.length}</p>
+                  </div>
+                  <Target className="w-8 h-8 text-blue-400" />
                 </div>
-              ) : (
-                <motion.div
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                  className="text-center py-12"
-                >
-                  <Target className="w-16 h-16 text-gray-600 mx-auto mb-4" />
-                  <h3 className="text-xl font-semibold text-white mb-2">No goals found</h3>
-                  <p className="text-gray-400 mb-6">
-                    {searchQuery ? "Try adjusting your search terms" : "Create your first goal to get started"}
-                  </p>
-                  <Button 
-                    onClick={() => router.push("/create-goal")}
-                    className="bg-purple-500 hover:bg-purple-600 text-white"
-                  >
-                    <Plus className="w-4 h-4 mr-2" />
-                    Create Goal
-                  </Button>
-                </motion.div>
-              )}
-            </AnimatePresence>
-          </TabsContent>
+              </CardContent>
+            </Card>
 
-          <TabsContent value="active">
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {activeGoals.map((goal) => (
-                <GoalCard key={goal.id} goal={goal} />
-              ))}
-            </div>
-          </TabsContent>
+            <Card className="bg-green-500/10 border-green-500/20">
+              <CardContent className="p-6">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-green-400 text-sm font-medium">Completed</p>
+                    <p className="text-2xl font-bold text-white">{completedGoals.length}</p>
+                  </div>
+                  <Trophy className="w-8 h-8 text-green-400" />
+                </div>
+              </CardContent>
+            </Card>
 
-          <TabsContent value="completed">
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {completedGoals.map((goal) => (
-                <GoalCard key={goal.id} goal={goal} />
-              ))}
+            <Card className="bg-orange-500/10 border-orange-500/20">
+              <CardContent className="p-6">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-orange-400 text-sm font-medium">Avg Progress</p>
+                    <p className="text-2xl font-bold text-white">
+                      {activeGoals.length > 0 
+                        ? Math.round(activeGoals.reduce((acc, goal) => acc + goal.progress, 0) / activeGoals.length)
+                        : 0}%
+                    </p>
+                  </div>
+                  <TrendingUp className="w-8 h-8 text-orange-400" />
+                </div>
+              </CardContent>
+            </Card>
+
+            <Card className="bg-purple-500/10 border-purple-500/20">
+              <CardContent className="p-6">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-purple-400 text-sm font-medium">Total Tasks</p>
+                    <p className="text-2xl font-bold text-white">
+                      {goals.reduce((acc, goal) => acc + goal.tasks.total, 0)}
+                    </p>
+                  </div>
+                  <CheckCircle2 className="w-8 h-8 text-purple-400" />
+                </div>
+              </CardContent>
+            </Card>
+          </motion.div>
+
+          {/* Filters */}
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.6, delay: 0.2 }}
+            className="flex flex-col md:flex-row gap-4"
+          >
+            <div className="relative flex-1">
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
+              <Input
+                placeholder="Search goals..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="pl-10 bg-gray-800 border-gray-700 text-white"
+              />
             </div>
-          </TabsContent>
-        </Tabs>
-      </motion.div>
+            
+            <select 
+              value={selectedCategory} 
+              onChange={(e) => setSelectedCategory(e.target.value)}
+              className="bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-white"
+            >
+              {categories.map(category => (
+                <option key={category} value={category}>
+                  {category === "all" ? "All Categories" : category}
+                </option>
+              ))}
+            </select>
+
+            <select 
+              value={selectedStatus} 
+              onChange={(e) => setSelectedStatus(e.target.value)}
+              className="bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-white"
+            >
+              {statuses.map(status => (
+                <option key={status} value={status}>
+                  {status === "all" ? "All Status" : status.charAt(0).toUpperCase() + status.slice(1)}
+                </option>
+              ))}
+            </select>
+          </motion.div>
+
+          {/* Goals Grid */}
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.6, delay: 0.3 }}
+            className="space-y-6"
+          >
+            <Tabs defaultValue="all" className="space-y-6">
+              <TabsList className="bg-gray-800/50 border border-gray-700 p-1">
+                <TabsTrigger value="all" className="data-[state=active]:bg-gray-700">
+                  All Goals ({filteredGoals.length})
+                </TabsTrigger>
+                <TabsTrigger value="active" className="data-[state=active]:bg-gray-700">
+                  Active ({activeGoals.length})
+                </TabsTrigger>
+                <TabsTrigger value="completed" className="data-[state=active]:bg-gray-700">
+                  Completed ({completedGoals.length})
+                </TabsTrigger>
+              </TabsList>
+
+              <TabsContent value="all">
+                <AnimatePresence mode="wait">
+                  {filteredGoals.length > 0 ? (
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                      {filteredGoals.map((goal) => (
+                        <GoalCard key={goal.id} goal={goal} />
+                      ))}
+                    </div>
+                  ) : (
+                    <EmptyState
+                      icon="🔍"
+                      title="No goals found"
+                      description={searchQuery ? "Try adjusting your search terms" : "Create your first goal to get started"}
+                      action={{
+                        label: "Create Goal",
+                        onClick: () => router.push("/create-goal")
+                      }}
+                      className="py-12"
+                    />
+                  )}
+                </AnimatePresence>
+              </TabsContent>
+
+              <TabsContent value="active">
+                {activeGoals.length > 0 ? (
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                    {activeGoals.map((goal) => (
+                      <GoalCard key={goal.id} goal={goal} />
+                    ))}
+                  </div>
+                ) : (
+                  <EmptyState
+                    icon="⚡"
+                    title="No active goals"
+                    description="Create a new goal or reactivate a paused one to get started."
+                    action={{
+                      label: "Create Goal",
+                      onClick: () => router.push("/create-goal")
+                    }}
+                    className="py-12"
+                  />
+                )}
+              </TabsContent>
+
+              <TabsContent value="completed">
+                {completedGoals.length > 0 ? (
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                    {completedGoals.map((goal) => (
+                      <GoalCard key={goal.id} goal={goal} />
+                    ))}
+                  </div>
+                ) : (
+                  <EmptyState
+                    icon="🏆"
+                    title="No completed goals yet"
+                    description="Keep working on your active goals to see them here when completed!"
+                    className="py-12"
+                  />
+                )}
+              </TabsContent>
+            </Tabs>
+          </motion.div>
+        </>
+      )}
     </div>
   );
 } 

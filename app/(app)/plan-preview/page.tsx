@@ -27,7 +27,8 @@ import {
   FileText,
   Link,
   Lightbulb,
-  Zap
+  Zap,
+  Loader2
 } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
@@ -35,6 +36,8 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Skeleton } from "@/components/ui/skeleton";
+import { EmptyState } from "@/components/ui/empty-state";
 import {
   Accordion,
   AccordionContent,
@@ -247,11 +250,119 @@ const difficultyColors = {
   hard: "bg-red-500/10 text-red-400 border-red-500/20"
 };
 
+// Loading skeleton components
+const PlanSkeleton = () => (
+  <div className="space-y-8">
+    {/* Header Skeleton */}
+    <div className="flex items-center justify-between">
+      <div>
+        <Skeleton className="h-10 w-64 bg-gray-800 mb-2" />
+        <Skeleton className="h-6 w-80 bg-gray-800" />
+      </div>
+      <div className="flex gap-3">
+        <Skeleton className="h-10 w-24 bg-gray-800" />
+        <Skeleton className="h-10 w-20 bg-gray-800" />
+      </div>
+    </div>
+
+    {/* Plan Summary Skeleton */}
+    <Card className="bg-gray-900/50 border-gray-700/50">
+      <CardContent className="p-8">
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+          {[...Array(4)].map((_, i) => (
+            <div key={i} className="text-center">
+              <Skeleton className="w-16 h-16 rounded-full bg-gray-800 mx-auto mb-3" />
+              <Skeleton className="h-8 w-12 bg-gray-800 mx-auto mb-2" />
+              <Skeleton className="h-4 w-16 bg-gray-800 mx-auto" />
+            </div>
+          ))}
+        </div>
+        <div className="mt-8 text-center">
+          <Skeleton className="h-12 w-48 bg-gray-800 mx-auto" />
+        </div>
+      </CardContent>
+    </Card>
+
+    {/* Tabs Skeleton */}
+    <div className="space-y-6">
+      <Skeleton className="h-10 w-full bg-gray-800" />
+      
+      {/* Progress Overview Skeleton */}
+      <Card className="bg-gray-900/50 border-gray-700/50">
+        <CardHeader>
+          <Skeleton className="h-6 w-48 bg-gray-800" />
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="flex items-center justify-between">
+            <Skeleton className="h-4 w-32 bg-gray-800" />
+            <Skeleton className="h-4 w-12 bg-gray-800" />
+          </div>
+          <Skeleton className="h-2 w-full bg-gray-800" />
+          
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-6">
+            {[...Array(3)].map((_, i) => (
+              <div key={i} className="bg-gray-800/50 rounded-lg p-4">
+                <Skeleton className="h-5 w-20 bg-gray-800 mb-2" />
+                <Skeleton className="h-4 w-32 bg-gray-800 mb-3" />
+                <div className="flex items-center justify-between">
+                  <Skeleton className="h-3 w-16 bg-gray-800" />
+                  <Skeleton className="h-3 w-8 bg-gray-800" />
+                </div>
+                <Skeleton className="h-1 w-full bg-gray-800 mt-1" />
+              </div>
+            ))}
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Milestones Skeleton */}
+      <Card className="bg-gray-900/50 border-gray-700/50">
+        <CardHeader>
+          <Skeleton className="h-6 w-48 bg-gray-800" />
+        </CardHeader>
+        <CardContent>
+          <div className="space-y-4">
+            {[...Array(4)].map((_, i) => (
+              <div key={i} className="flex items-center gap-4 p-4 bg-gray-800/30 rounded-lg">
+                <Skeleton className="w-12 h-12 rounded-full bg-gray-800" />
+                <div className="flex-1">
+                  <Skeleton className="h-5 w-48 bg-gray-800 mb-2" />
+                  <Skeleton className="h-4 w-64 bg-gray-800" />
+                </div>
+                <Skeleton className="w-16 h-6 bg-gray-800" />
+              </div>
+            ))}
+          </div>
+        </CardContent>
+      </Card>
+    </div>
+  </div>
+);
+
 export default function PlanPreviewPage() {
   const router = useRouter();
-  const [planData, setPlanData] = useState<PlanData>(mockPlanData);
+  const [planData, setPlanData] = useState<PlanData | null>(null);
   const [selectedTab, setSelectedTab] = useState("overview");
   const [isStarting, setIsStarting] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
+  const [hasError, setHasError] = useState(false);
+
+  useEffect(() => {
+    // Simulate plan generation loading
+    const loadingTimer = setTimeout(() => {
+      setIsLoading(false);
+      
+      // For demo purposes: uncomment the line below to test error state
+      // setHasError(true);
+      
+      // Set the mock plan data if no error
+      if (!hasError) {
+        setPlanData(mockPlanData);
+      }
+    }, 2000);
+    
+    return () => clearTimeout(loadingTimer);
+  }, [hasError]);
 
   const toggleTaskCompletion = (milestoneId: string, taskId: string) => {
     setPlanData(prev => ({
@@ -283,6 +394,60 @@ export default function PlanPreviewPage() {
       router.push("/dashboard");
     }, 2000);
   };
+
+  const handleRetryGeneration = () => {
+    setIsLoading(true);
+    setHasError(false);
+    // This would normally trigger a new plan generation request
+  };
+
+  if (isLoading) {
+    return <PlanSkeleton />;
+  }
+
+  if (hasError || !planData) {
+    return (
+      <div className="space-y-8">
+        {/* Header */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.6 }}
+          className="flex items-center justify-between"
+        >
+          <div>
+            <h1 className="text-3xl font-bold text-white flex items-center gap-3">
+              <Target className="w-8 h-8 text-purple-400" />
+              Plan Generation
+            </h1>
+            <p className="text-gray-400 mt-2">
+              Unable to generate your AI plan
+            </p>
+          </div>
+          
+          <Button 
+            variant="outline" 
+            onClick={() => router.push("/create-goal")}
+            className="border-gray-700 bg-gray-800/50 hover:bg-gray-700 text-gray-300"
+          >
+            <ArrowLeft className="w-4 h-4 mr-2" />
+            Back to Create Goal
+          </Button>
+        </motion.div>
+
+        <EmptyState
+          icon="⚠️"
+          title="Unable to generate plan"
+          description="We encountered an issue while creating your personalized plan. Please try again or modify your goal parameters."
+          action={{
+            label: "Try Again",
+            onClick: handleRetryGeneration
+          }}
+          className="py-16"
+        />
+      </div>
+    );
+  }
 
   const overallProgress = planData.milestones.reduce((acc, milestone) => acc + milestone.progress, 0) / planData.milestones.length;
 

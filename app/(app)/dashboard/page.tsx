@@ -7,6 +7,8 @@ import { QuickActions } from "@/components/dashboard/QuickActions";
 import { AnalyticsCards } from "@/components/dashboard/AnalyticsCards";
 import { GoalProgress } from "@/components/dashboard/GoalProgress";
 import { DailyMotivation } from "@/components/dashboard/DailyMotivation";
+import { Skeleton } from "@/components/ui/skeleton";
+import { EmptyState } from "@/components/ui/empty-state";
 import { 
   Circle,
   Plus,
@@ -29,14 +31,106 @@ import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Task } from "@/lib/stores/taskStore";
 
+// Loading skeleton components
+const TaskSkeleton = () => (
+  <Card className="bg-gray-900/50 border-gray-700/50">
+    <CardContent className="p-4">
+      <div className="space-y-3">
+        <div className="flex items-center justify-between">
+          <Skeleton className="h-4 w-48 bg-gray-800" />
+          <Skeleton className="h-6 w-16 bg-gray-800" />
+        </div>
+        <Skeleton className="h-3 w-32 bg-gray-800" />
+        <div className="flex items-center gap-2">
+          <Skeleton className="h-5 w-12 bg-gray-800" />
+          <Skeleton className="h-5 w-12 bg-gray-800" />
+        </div>
+      </div>
+    </CardContent>
+  </Card>
+);
+
+const DashboardSkeleton = () => (
+  <div className="space-y-8">
+    {/* Header Skeleton */}
+    <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+      <div>
+        <Skeleton className="h-10 w-80 bg-gray-800 mb-2" />
+        <Skeleton className="h-6 w-64 bg-gray-800 mb-4" />
+        <div className="flex items-center gap-4">
+          <Skeleton className="h-6 w-32 bg-gray-800" />
+          <Skeleton className="h-6 w-28 bg-gray-800" />
+          <Skeleton className="h-6 w-36 bg-gray-800" />
+        </div>
+      </div>
+      <div className="flex items-center gap-3">
+        <Skeleton className="h-10 w-24 bg-gray-800" />
+        <Skeleton className="h-10 w-10 bg-gray-800" />
+      </div>
+    </div>
+
+    {/* Analytics Skeleton */}
+    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+      {[...Array(4)].map((_, i) => (
+        <Card key={i} className="bg-gray-900/50 border-gray-700/50">
+          <CardContent className="p-6">
+            <Skeleton className="h-4 w-24 bg-gray-800 mb-2" />
+            <Skeleton className="h-8 w-16 bg-gray-800" />
+          </CardContent>
+        </Card>
+      ))}
+    </div>
+
+    {/* Tasks Skeleton */}
+    <div className="space-y-6">
+      <div className="flex items-center justify-between">
+        <Skeleton className="h-8 w-48 bg-gray-800" />
+        <div className="flex items-center gap-2">
+          <Skeleton className="h-8 w-20 bg-gray-800" />
+          <Skeleton className="h-8 w-20 bg-gray-800" />
+        </div>
+      </div>
+      
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+        <div className="space-y-4">
+          <Skeleton className="h-6 w-24 bg-gray-800" />
+          <div className="space-y-3">
+            {[...Array(3)].map((_, i) => (
+              <TaskSkeleton key={i} />
+            ))}
+          </div>
+        </div>
+        <div className="space-y-4">
+          <Skeleton className="h-6 w-24 bg-gray-800" />
+          <div className="space-y-3">
+            {[...Array(2)].map((_, i) => (
+              <TaskSkeleton key={i} />
+            ))}
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+);
+
 export default function DashboardPage() {
   const [currentTime, setCurrentTime] = useState(new Date());
+  const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
     const timer = setInterval(() => {
       setCurrentTime(new Date());
     }, 1000);
     return () => clearInterval(timer);
+  }, []);
+
+  useEffect(() => {
+    // Simulate loading for 2 seconds
+    const loadingTimer = setTimeout(() => {
+      setIsLoading(false);
+    }, 2000);
+    
+    return () => clearTimeout(loadingTimer);
   }, []);
 
   // Mock data for dashboard
@@ -156,6 +250,9 @@ export default function DashboardPage() {
     }
   ];
 
+  // For demo purposes, uncomment the line below to test empty state
+  // const todaysTasks: Task[] = [];
+
   const completedTasks = todaysTasks.filter(task => task.completed);
   const pendingTasks = todaysTasks.filter(task => !task.completed);
 
@@ -165,6 +262,10 @@ export default function DashboardPage() {
     if (hour < 17) return "Good afternoon";
     return "Good evening";
   };
+
+  if (isLoading) {
+    return <DashboardSkeleton />;
+  }
 
   return (
     <div className="space-y-8">
@@ -273,54 +374,85 @@ export default function DashboardPage() {
           </div>
         </div>
 
-        {/* Task Lists */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-          {/* Pending Tasks */}
-          <div className="space-y-4">
-            <div className="flex items-center gap-2">
-              <h3 className="text-lg font-semibold text-white">Up Next</h3>
-              <Badge variant="secondary" className="bg-orange-500/10 text-orange-400 border-orange-500/20">
-                <Flame className="w-3 h-3 mr-1" />
-                {pendingTasks.length}
-              </Badge>
+        {todaysTasks.length === 0 ? (
+          <EmptyState
+            icon="🎉"
+            title="You've crushed all your tasks today!"
+            description="Take a break — or plan tomorrow's step."
+            action={{
+              label: "Plan Tomorrow",
+              href: "/create-goal"
+            }}
+            className="py-16"
+          />
+        ) : (
+          /* Task Lists */
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+            {/* Pending Tasks */}
+            <div className="space-y-4">
+              <div className="flex items-center gap-2">
+                <h3 className="text-lg font-semibold text-white">Up Next</h3>
+                <Badge variant="secondary" className="bg-orange-500/10 text-orange-400 border-orange-500/20">
+                  <Flame className="w-3 h-3 mr-1" />
+                  {pendingTasks.length}
+                </Badge>
+              </div>
+              <div className="space-y-3">
+                {pendingTasks.length === 0 ? (
+                  <Card className="bg-gray-900/50 border-gray-700/50">
+                    <CardContent className="p-8 text-center">
+                      <CheckCircle2 className="w-12 h-12 text-green-400 mx-auto mb-4" />
+                      <p className="text-gray-400">All tasks completed! 🎉</p>
+                    </CardContent>
+                  </Card>
+                ) : (
+                  pendingTasks.map((task, index) => (
+                    <motion.div
+                      key={task.id}
+                      initial={{ opacity: 0, x: -20 }}
+                      animate={{ opacity: 1, x: 0 }}
+                      transition={{ duration: 0.3, delay: index * 0.1 }}
+                    >
+                      <TaskCard task={task} />
+                    </motion.div>
+                  ))
+                )}
+              </div>
             </div>
-            <div className="space-y-3">
-              {pendingTasks.map((task, index) => (
-                <motion.div
-                  key={task.id}
-                  initial={{ opacity: 0, x: -20 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  transition={{ duration: 0.3, delay: index * 0.1 }}
-                >
-                  <TaskCard task={task} />
-                </motion.div>
-              ))}
-            </div>
-          </div>
 
-          {/* Completed Tasks */}
-          <div className="space-y-4">
-            <div className="flex items-center gap-2">
-              <h3 className="text-lg font-semibold text-white">Completed</h3>
-              <Badge variant="secondary" className="bg-green-500/10 text-green-400 border-green-500/20">
-                <Star className="w-3 h-3 mr-1" />
-                {completedTasks.length}
-              </Badge>
-            </div>
-            <div className="space-y-3">
-              {completedTasks.map((task, index) => (
-                <motion.div
-                  key={task.id}
-                  initial={{ opacity: 0, x: 20 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  transition={{ duration: 0.3, delay: index * 0.1 }}
-                >
-                  <TaskCard task={task} />
-                </motion.div>
-              ))}
+            {/* Completed Tasks */}
+            <div className="space-y-4">
+              <div className="flex items-center gap-2">
+                <h3 className="text-lg font-semibold text-white">Completed</h3>
+                <Badge variant="secondary" className="bg-green-500/10 text-green-400 border-green-500/20">
+                  <Star className="w-3 h-3 mr-1" />
+                  {completedTasks.length}
+                </Badge>
+              </div>
+              <div className="space-y-3">
+                {completedTasks.length === 0 ? (
+                  <Card className="bg-gray-900/50 border-gray-700/50">
+                    <CardContent className="p-8 text-center">
+                      <Target className="w-12 h-12 text-gray-400 mx-auto mb-4" />
+                      <p className="text-gray-400">No completed tasks yet</p>
+                    </CardContent>
+                  </Card>
+                ) : (
+                  completedTasks.map((task, index) => (
+                    <motion.div
+                      key={task.id}
+                      initial={{ opacity: 0, x: 20 }}
+                      animate={{ opacity: 1, x: 0 }}
+                      transition={{ duration: 0.3, delay: index * 0.1 }}
+                    >
+                      <TaskCard task={task} />
+                    </motion.div>
+                  ))
+                )}
+              </div>
             </div>
           </div>
-        </div>
+        )}
 
         {/* Quick Stats */}
         <motion.div
