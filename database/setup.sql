@@ -1,3 +1,6 @@
+-- NeonDB Waitlist Table Setup
+-- Run this in your Neon database console or using a SQL client
+
 -- Create waitlist table
 CREATE TABLE IF NOT EXISTS waitlist (
   id SERIAL PRIMARY KEY,
@@ -15,7 +18,8 @@ CREATE INDEX IF NOT EXISTS idx_waitlist_source ON waitlist(source);
 
 -- Add email validation constraint
 ALTER TABLE waitlist 
-ADD CONSTRAINT valid_email CHECK (email ~* '^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}$');
+ADD CONSTRAINT IF NOT EXISTS valid_email 
+CHECK (email ~* '^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}$');
 
 -- Create a function to update the updated_at timestamp
 CREATE OR REPLACE FUNCTION update_updated_at()
@@ -27,12 +31,13 @@ END;
 $$ LANGUAGE plpgsql;
 
 -- Create trigger to automatically update updated_at
+DROP TRIGGER IF EXISTS update_waitlist_updated_at ON waitlist;
 CREATE TRIGGER update_waitlist_updated_at
   BEFORE UPDATE ON waitlist
   FOR EACH ROW
   EXECUTE FUNCTION update_updated_at();
 
--- Insert some example data (optional)
+-- Optional: Insert some test data
 -- INSERT INTO waitlist (email, source) VALUES 
 -- ('test@example.com', 'landing_page'),
 -- ('user@domain.com', 'social_media')
