@@ -54,6 +54,10 @@ import {
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Textarea } from "@/components/ui/textarea";
+import { cn } from "@/lib/utils";
+import useTaskStore, { Task } from "@/lib/stores/taskStore";
+import { useTaskToasts } from "@/components/ui/toast";
+import { SnoozeDialog } from "@/components/tasks/SnoozeDialog";
 
 // Form validation schema
 const formSchema = z.object({
@@ -128,6 +132,9 @@ export default function CreateGoalPage() {
     motivationalQuotes[Math.floor(Math.random() * motivationalQuotes.length)]
   );
 
+  // Add toast notifications
+  const toasts = useTaskToasts();
+
   const form = useForm<FormData>({
     resolver: zodResolver(formSchema),
     defaultValues: {
@@ -149,12 +156,30 @@ export default function CreateGoalPage() {
     setIsLoading(true);
     console.log("🎯 Goal Creation Form submitted:", data);
     
-    // Simulate API call
-    setTimeout(() => {
+    try {
+      // Simulate API call
+      await new Promise((resolve, reject) => {
+        setTimeout(() => {
+          // Simulate occasional failures for demonstration
+          if (Math.random() > 0.9) {
+            reject(new Error("Plan generation service temporarily unavailable"));
+          } else {
+            resolve(true);
+          }
+        }, 2000);
+      });
+
+      // Show success toast
+      toasts.onSuccess(`Goal "${data.goalName}" created successfully! Generating your AI plan...`);
+      
       setIsLoading(false);
       // Redirect to plan preview with the form data
       router.push("/plan-preview");
-    }, 2000);
+    } catch (error) {
+      setIsLoading(false);
+      // Show error toast
+      toasts.onError(error instanceof Error ? error.message : "Failed to create goal. Please try again.");
+    }
   };
 
   const nextStep = () => {
