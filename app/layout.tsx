@@ -1,7 +1,9 @@
-import type { Metadata } from 'next'
+import type { Metadata, Viewport } from 'next'
 import { Inter, JetBrains_Mono } from 'next/font/google'
 import './globals.css'
 import { cn } from '@/lib/utils'
+import { Analytics } from '@vercel/analytics/next'
+import { SpeedInsights } from '@vercel/speed-insights/next'
 
 const inter = Inter({
   subsets: ['latin'],
@@ -29,12 +31,15 @@ export const metadata: Metadata = {
     ],
   },
   manifest: '/site.webmanifest',
-  themeColor: '#ef4444',
   openGraph: {
     title: 'TodoAI - Turn Your Goals Into Daily Action',
     description: 'Transform your ambitions into personalized day-by-day plans with the power of AI.',
     type: 'website',
   },
+}
+
+export const viewport: Viewport = {
+  themeColor: '#ef4444',
 }
 
 export default function RootLayout({
@@ -49,7 +54,6 @@ export default function RootLayout({
         <link rel="icon" href="/favicon-32x32.svg" sizes="32x32" type="image/svg+xml" />
         <link rel="apple-touch-icon" href="/apple-touch-icon.svg" sizes="180x180" />
         <link rel="manifest" href="/site.webmanifest" />
-        <meta name="theme-color" content="#ef4444" />
         <meta name="msapplication-TileColor" content="#0a0a0a" />
       </head>
       <body 
@@ -60,6 +64,8 @@ export default function RootLayout({
         )}
       >
         {children}
+        <Analytics />
+        <SpeedInsights />
       </body>
     </html>
   )
