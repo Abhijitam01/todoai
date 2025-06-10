@@ -38,21 +38,32 @@ export function Topbar({ onMenuClick }: TopbarProps) {
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.3 }}
     >
-      {/* Mobile menu button */}
-      <Button
-        variant="outline"
-        size="sm"
-        className="lg:hidden border-gray-700 bg-gray-800 hover:bg-gray-700 text-gray-300 hover:text-white"
-        onClick={onMenuClick}
-      >
-        <Menu className="h-4 w-4" />
-        <span className="sr-only">Open sidebar</span>
-      </Button>
+      {/* Left side - Mobile menu button and logo */}
+      <div className="flex items-center gap-x-4">
+        {/* Mobile menu button */}
+        <Button
+          variant="outline"
+          size="sm"
+          className="md:hidden border-gray-700 bg-gray-800 hover:bg-gray-700 text-gray-300 hover:text-white"
+          onClick={onMenuClick}
+        >
+          <Menu className="h-4 w-4" />
+          <span className="sr-only">Open sidebar</span>
+        </Button>
 
-      <Separator orientation="vertical" className="h-6 lg:hidden bg-gray-700" />
+        {/* App logo/name for mobile */}
+        <div className="md:hidden flex items-center">
+          <div className="w-8 h-8 bg-gradient-to-br from-red-500 to-red-600 rounded-lg flex items-center justify-center mr-3">
+            <span className="text-white font-bold text-sm">T</span>
+          </div>
+          <span className="text-lg font-bold text-white">TodoAI</span>
+        </div>
+      </div>
 
-      {/* Page title */}
-      <div className="flex flex-1 gap-x-4 self-stretch lg:gap-x-6">
+      <Separator orientation="vertical" className="h-6 md:hidden bg-gray-700" />
+
+      {/* Page title - hidden on mobile */}
+      <div className="hidden md:flex flex-1 gap-x-4 self-stretch lg:gap-x-6">
         <div className="flex items-center">
           <motion.h1 
             className="text-xl font-semibold text-white"
@@ -65,6 +76,9 @@ export function Topbar({ onMenuClick }: TopbarProps) {
           </motion.h1>
         </div>
       </div>
+
+      {/* Spacer for mobile */}
+      <div className="flex-1 md:hidden" />
 
       {/* Right side */}
       <div className="flex items-center gap-x-4 lg:gap-x-6">

@@ -2,21 +2,13 @@
 
 import { usePathname } from "next/navigation"
 import { motion } from "framer-motion"
-import { X } from "lucide-react"
-import { Sheet, SheetContent } from "@/components/ui/sheet"
 import { NavItem } from "./NavItem"
 import { navigationItems } from "@/lib/navigation"
 
-interface SidebarProps {
-  mobile?: boolean
-  sidebarOpen?: boolean
-  setSidebarOpen?: (open: boolean) => void
-}
-
-export function Sidebar({ mobile, sidebarOpen, setSidebarOpen }: SidebarProps) {
+export function Sidebar() {
   const pathname = usePathname()
 
-  const SidebarContent = () => (
+  return (
     <div className="flex h-full flex-col bg-gray-900 border-r border-gray-800">
       {/* Logo */}
       <div className="flex h-16 shrink-0 items-center px-6 border-b border-gray-800">
@@ -63,7 +55,6 @@ export function Sidebar({ mobile, sidebarOpen, setSidebarOpen }: SidebarProps) {
                 icon={item.icon}
                 label={item.label}
                 isActive={pathname === item.href}
-                onClick={() => mobile && setSidebarOpen?.(false)}
               />
             </motion.li>
           ))}
@@ -78,22 +69,9 @@ export function Sidebar({ mobile, sidebarOpen, setSidebarOpen }: SidebarProps) {
           transition={{ duration: 0.3, delay: 0.4 }}
           className="text-xs text-gray-400 text-center"
         >
-          {/* TODO: Add version info or user settings */}
           v1.0.0
         </motion.div>
       </div>
     </div>
   )
-
-  if (mobile) {
-    return (
-      <Sheet open={sidebarOpen} onOpenChange={setSidebarOpen}>
-        <SheetContent side="left" className="p-0 w-72">
-          <SidebarContent />
-        </SheetContent>
-      </Sheet>
-    )
-  }
-
-  return <SidebarContent />
 } 

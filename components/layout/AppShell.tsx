@@ -2,6 +2,7 @@
 
 import { useState } from "react"
 import { Sidebar } from "./Sidebar"
+import { MobileNavDrawer } from "./MobileNavDrawer"
 import { Topbar } from "./Topbar"
 import { ToastProvider } from "@/components/ui/toast"
 
@@ -16,19 +17,18 @@ export function AppShell({ children }: AppShellProps) {
     <ToastProvider>
       <div className="min-h-screen bg-gray-950 text-white">
         {/* Sidebar for desktop */}
-        <div className="hidden lg:fixed lg:inset-y-0 lg:z-50 lg:flex lg:w-72 lg:flex-col">
+        <div className="hidden md:fixed md:inset-y-0 md:z-50 md:flex md:w-72 md:flex-col">
           <Sidebar />
         </div>
 
-        {/* Mobile sidebar */}
-        <Sidebar 
-          mobile 
-          sidebarOpen={sidebarOpen} 
-          setSidebarOpen={setSidebarOpen} 
+        {/* Mobile navigation drawer */}
+        <MobileNavDrawer 
+          isOpen={sidebarOpen} 
+          onClose={() => setSidebarOpen(false)} 
         />
 
         {/* Main content area */}
-        <div className="lg:pl-72">
+        <div className="md:pl-72">
           {/* Topbar */}
           <Topbar onMenuClick={() => setSidebarOpen(true)} />
           

@@ -1,7 +1,7 @@
 import { 
   LayoutDashboard, 
   Target, 
-  Plus, 
+  PlusCircle, 
   Settings 
 } from "lucide-react"
 import { LucideIcon } from "lucide-react"
@@ -26,7 +26,7 @@ export const navigationItems: NavigationItem[] = [
   {
     href: "/create-goal",
     label: "Create Goal",
-    icon: Plus,
+    icon: PlusCircle,
   },
   {
     href: "/settings",
