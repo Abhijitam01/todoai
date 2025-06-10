@@ -4,92 +4,163 @@ import { useState } from "react";
 import { motion } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { 
+  Moon, 
+  Calendar, 
+  Clock, 
+  Target, 
+  Sparkles,
+  CheckCircle2,
+  Star
+} from "lucide-react";
 import { SnoozeDialog } from "./SnoozeDialog";
 import { RescheduleDialog } from "./RescheduleDialog";
-import { Clock, Calendar, Target, CheckCircle2 } from "lucide-react";
-
-// Sample task data
-const sampleTask = {
-  id: "task-1",
-  title: "Design hero section",
-  date: "2025-06-10",
-  goal: "Launch Portfolio",
-  status: "PENDING"
-};
+import { Task } from "@/lib/stores/taskStore";
 
 export function TaskDialogDemo() {
   const [snoozeOpen, setSnoozeOpen] = useState(false);
   const [rescheduleOpen, setRescheduleOpen] = useState(false);
 
-  const handleSnooze = (taskId: string) => {
-    console.log(`✅ Snooze confirmed for task: ${taskId}`);
-    // TODO: Implement actual snooze logic
+  // Complete sample task matching our enhanced Task interface
+  const sampleTask: Task = {
+    id: "demo-task-1",
+    title: "Complete quarterly performance review",
+    description: "Analyze team productivity metrics and prepare comprehensive report for management review",
+    priority: "high",
+    timeEstimate: "3 hours",
+    tags: ["quarterly", "performance", "analysis", "management"],
+    completed: false,
+    dueTime: "2:00 PM",
+    dueDate: "2024-01-25",
+    goal: "Q4 Performance Analysis",
+    status: "PENDING",
+    createdAt: "2024-01-15T08:00:00Z",
+    updatedAt: "2024-01-15T08:00:00Z"
+  };
+
+  const handleSnooze = (taskId: string, snoozeUntil: string) => {
+    console.log(`Task ${taskId} snoozed until ${snoozeUntil}`);
+    setSnoozeOpen(false);
   };
 
   const handleReschedule = (taskId: string, newDate: string, reason?: string) => {
-    console.log(`✅ Reschedule confirmed for task: ${taskId} to ${newDate}${reason ? ` (${reason})` : ''}`);
-    // TODO: Implement actual reschedule logic
+    console.log(`Task ${taskId} rescheduled to ${newDate}${reason ? ` - ${reason}` : ''}`);
+    setRescheduleOpen(false);
   };
 
+  const features = [
+    {
+      icon: <Moon className="w-5 h-5 text-blue-400" />,
+      title: "Smart Snooze",
+      description: "Quick presets and custom scheduling",
+      color: "bg-blue-500/10 border-blue-500/20"
+    },
+    {
+      icon: <Calendar className="w-5 h-5 text-orange-400" />,
+      title: "Flexible Reschedule",
+      description: "Date picker with reason tracking",
+      color: "bg-orange-500/10 border-orange-500/20"
+    },
+    {
+      icon: <Sparkles className="w-5 h-5 text-purple-400" />,
+      title: "Smart Suggestions",
+      description: "Context-aware recommendations",
+      color: "bg-purple-500/10 border-purple-500/20"
+    },
+    {
+      icon: <Target className="w-5 h-5 text-green-400" />,
+      title: "Keyboard Shortcuts",
+      description: "1-5 for quick selection, Enter/Esc",
+      color: "bg-green-500/10 border-green-500/20"
+    }
+  ];
+
   return (
-    <div className="max-w-2xl mx-auto p-6 space-y-6">
+    <div className="max-w-4xl mx-auto space-y-8">
       {/* Header */}
-      <div className="text-center space-y-2">
-        <h1 className="text-2xl font-bold text-white">Task Management Dialogs</h1>
-        <p className="text-white/60">Demo of Snooze and Reschedule functionality</p>
-      </div>
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        className="text-center space-y-4"
+      >
+        <h1 className="text-4xl font-bold text-white">
+          Enhanced Task Dialogs
+        </h1>
+        <p className="text-gray-400 text-lg max-w-2xl mx-auto">
+          Experience the next generation of task management with smart snooze options, 
+          flexible rescheduling, and intuitive keyboard shortcuts.
+        </p>
+      </motion.div>
 
       {/* Sample Task Card */}
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.5 }}
+        transition={{ delay: 0.1 }}
       >
-        <Card className="bg-gray-900/50 border-gray-700/50 text-white">
-          <CardHeader className="pb-3">
-            <CardTitle className="flex items-center gap-2 text-lg">
-              <Target className="w-5 h-5 text-blue-400" />
-              Sample Task
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            {/* Task Info */}
-            <div className="space-y-2">
-              <h3 className="font-medium text-white">{sampleTask.title}</h3>
-              <div className="flex items-center gap-4 text-sm text-white/60">
-                <span className="flex items-center gap-1">
-                  <Calendar className="w-3 h-3" />
-                  {sampleTask.date}
-                </span>
-                <span className="flex items-center gap-1">
-                  <Target className="w-3 h-3" />
-                  {sampleTask.goal}
-                </span>
-                <span className="flex items-center gap-1">
-                  <CheckCircle2 className="w-3 h-3" />
-                  {sampleTask.status}
-                </span>
+        <Card className="bg-gray-900/50 border-gray-700/50">
+          <CardHeader>
+            <div className="flex items-start justify-between">
+              <div className="space-y-2">
+                <CardTitle className="text-white flex items-center gap-2">
+                  {sampleTask.title}
+                  <Badge 
+                    variant="secondary" 
+                    className="bg-red-500/10 text-red-400 border-red-500/20"
+                  >
+                    {sampleTask.priority}
+                  </Badge>
+                </CardTitle>
+                <p className="text-gray-400 text-sm">
+                  {sampleTask.description}
+                </p>
+                <div className="flex items-center gap-4 text-sm text-gray-400">
+                  <span className="flex items-center gap-1">
+                    <Clock className="w-4 h-4" />
+                    {sampleTask.timeEstimate}
+                  </span>
+                  <span className="flex items-center gap-1">
+                    <Calendar className="w-4 h-4" />
+                    Due: {sampleTask.dueDate} at {sampleTask.dueTime}
+                  </span>
+                  <span className="flex items-center gap-1">
+                    <Target className="w-4 h-4" />
+                    {sampleTask.goal}
+                  </span>
+                </div>
+                <div className="flex items-center gap-2">
+                  {sampleTask.tags.map((tag) => (
+                    <Badge 
+                      key={tag} 
+                      variant="outline" 
+                      className="text-xs border-gray-600 text-gray-300"
+                    >
+                      {tag}
+                    </Badge>
+                  ))}
+                </div>
               </div>
+              <Badge variant="secondary" className="bg-gray-800 text-gray-300">
+                {sampleTask.status}
+              </Badge>
             </div>
-
-            {/* Action Buttons */}
-            <div className="flex items-center gap-3 pt-2">
+          </CardHeader>
+          <CardContent>
+            <div className="flex items-center gap-3">
               <Button
-                variant="ghost"
-                size="sm"
                 onClick={() => setSnoozeOpen(true)}
-                className="h-8 px-3 text-xs bg-blue-500/10 text-blue-400 border border-blue-500/20 hover:bg-blue-500/20 hover:text-blue-300"
+                className="bg-blue-600 hover:bg-blue-700 text-white"
               >
-                <Clock className="w-3 h-3 mr-1" />
-                Snooze
+                <Moon className="w-4 h-4 mr-2" />
+                Snooze Task
               </Button>
               <Button
-                variant="ghost"
-                size="sm"
                 onClick={() => setRescheduleOpen(true)}
-                className="h-8 px-3 text-xs bg-orange-500/10 text-orange-400 border border-orange-500/20 hover:bg-orange-500/20 hover:text-orange-300"
+                variant="outline"
+                className="border-orange-500/50 text-orange-400 hover:bg-orange-500/10"
               >
-                <Calendar className="w-3 h-3 mr-1" />
+                <Calendar className="w-4 h-4 mr-2" />
                 Reschedule
               </Button>
             </div>
@@ -97,67 +168,85 @@ export function TaskDialogDemo() {
         </Card>
       </motion.div>
 
-      {/* Feature Overview */}
+      {/* Features Grid */}
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.5, delay: 0.2 }}
-        className="grid md:grid-cols-2 gap-4"
+        transition={{ delay: 0.2 }}
+        className="grid grid-cols-1 md:grid-cols-2 gap-6"
       >
-        <Card className="bg-blue-500/10 border-blue-500/20 text-white">
-          <CardHeader className="pb-3">
-            <CardTitle className="flex items-center gap-2 text-base">
-              <Clock className="w-4 h-4 text-blue-400" />
-              Snooze Dialog
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="text-sm text-white/70 space-y-2">
-            <p>• Simple confirmation modal</p>
-            <p>• Pushes task to tomorrow</p>
-            <p>• Framer Motion animations</p>
-            <p>• Console logging for demo</p>
-          </CardContent>
-        </Card>
-
-        <Card className="bg-orange-500/10 border-orange-500/20 text-white">
-          <CardHeader className="pb-3">
-            <CardTitle className="flex items-center gap-2 text-base">
-              <Calendar className="w-4 h-4 text-orange-400" />
-              Reschedule Dialog
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="text-sm text-white/70 space-y-2">
-            <p>• Custom date picker</p>
-            <p>• Quick date options</p>
-            <p>• Optional reason field</p>
-            <p>• Rich preview with animations</p>
-          </CardContent>
-        </Card>
+        {features.map((feature, index) => (
+          <motion.div
+            key={feature.title}
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.3 + index * 0.1 }}
+          >
+            <Card className={`${feature.color} border backdrop-blur-sm`}>
+              <CardContent className="p-6">
+                <div className="flex items-start gap-4">
+                  <div className="flex-shrink-0">
+                    {feature.icon}
+                  </div>
+                  <div>
+                    <h3 className="font-semibold text-white mb-2">
+                      {feature.title}
+                    </h3>
+                    <p className="text-gray-300 text-sm">
+                      {feature.description}
+                    </p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          </motion.div>
+        ))}
       </motion.div>
 
       {/* Instructions */}
       <motion.div
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        transition={{ duration: 0.5, delay: 0.4 }}
-        className="text-center text-sm text-white/50 bg-white/5 border border-white/10 rounded-lg p-4"
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.4 }}
       >
-        <p className="mb-2">🎯 <strong>Try it out:</strong> Click the Snooze or Reschedule buttons above</p>
-        <p>Check the browser console to see the logged output from both dialogs</p>
+        <Card className="bg-gray-900/30 border-gray-700/50">
+          <CardContent className="p-6">
+            <h3 className="text-lg font-semibold text-white mb-4 flex items-center gap-2">
+              <Star className="w-5 h-5 text-yellow-400" />
+              How to Test
+            </h3>
+            <div className="space-y-3 text-gray-300">
+              <p>
+                <strong className="text-white">Snooze Dialog:</strong> Click "Snooze Task" to explore smart preset options, 
+                custom scheduling, and keyboard shortcuts (1-5 for quick selection).
+              </p>
+              <p>
+                <strong className="text-white">Reschedule Dialog:</strong> Click "Reschedule" to test the date picker, 
+                quick date options, and optional reason field.
+              </p>
+              <p>
+                <strong className="text-white">Keyboard Navigation:</strong> Use Tab to navigate, Enter to confirm, 
+                and Escape to cancel any dialog.
+              </p>
+              <p>
+                <strong className="text-white">Console Output:</strong> Open developer tools to see the action 
+                results logged to console.
+              </p>
+            </div>
+          </CardContent>
+        </Card>
       </motion.div>
 
       {/* Dialogs */}
       <SnoozeDialog
         open={snoozeOpen}
         onOpenChange={setSnoozeOpen}
-        onSnooze={handleSnooze}
         task={sampleTask}
       />
 
       <RescheduleDialog
         open={rescheduleOpen}
         onOpenChange={setRescheduleOpen}
-        onReschedule={handleReschedule}
         task={sampleTask}
       />
     </div>

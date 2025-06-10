@@ -27,6 +27,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Task } from "@/lib/stores/taskStore";
 
 export default function DashboardPage() {
   const [currentTime, setCurrentTime] = useState(new Date());
@@ -77,7 +78,7 @@ export default function DashboardPage() {
     }
   ];
 
-  const todaysTasks = [
+  const todaysTasks: Task[] = [
     {
       id: "1",
       title: "Review Q4 performance metrics",
@@ -86,7 +87,12 @@ export default function DashboardPage() {
       timeEstimate: "2h",
       tags: ["analytics", "business"],
       completed: false,
-      dueTime: "10:00 AM"
+      dueTime: "10:00 AM",
+      dueDate: "2024-01-20",
+      goal: "Business Growth",
+      status: "PENDING",
+      createdAt: "2024-01-15T08:00:00Z",
+      updatedAt: "2024-01-15T08:00:00Z"
     },
     {
       id: "2",
@@ -96,7 +102,12 @@ export default function DashboardPage() {
       timeEstimate: "1.5h",
       tags: ["design", "react"],
       completed: true,
-      dueTime: "2:00 PM"
+      dueTime: "2:00 PM",
+      dueDate: "2024-01-20",
+      goal: "Product Development",
+      status: "COMPLETED",
+      createdAt: "2024-01-15T08:00:00Z",
+      updatedAt: "2024-01-15T14:00:00Z"
     },
     {
       id: "3",
@@ -106,7 +117,12 @@ export default function DashboardPage() {
       timeEstimate: "30m",
       tags: ["meeting", "team"],
       completed: true,
-      dueTime: "9:30 AM"
+      dueTime: "9:30 AM",
+      dueDate: "2024-01-20",
+      goal: "Team Coordination",
+      status: "COMPLETED",
+      createdAt: "2024-01-15T08:00:00Z",
+      updatedAt: "2024-01-15T09:30:00Z"
     },
     {
       id: "4",
@@ -116,7 +132,12 @@ export default function DashboardPage() {
       timeEstimate: "45m",
       tags: ["documentation"],
       completed: false,
-      dueTime: "4:00 PM"
+      dueTime: "4:00 PM",
+      dueDate: "2024-01-20",
+      goal: "Documentation",
+      status: "PENDING",
+      createdAt: "2024-01-15T08:00:00Z",
+      updatedAt: "2024-01-15T08:00:00Z"
     },
     {
       id: "5",
@@ -126,7 +147,12 @@ export default function DashboardPage() {
       timeEstimate: "1h",
       tags: ["code-review", "development"],
       completed: false,
-      dueTime: "3:00 PM"
+      dueTime: "3:00 PM",
+      dueDate: "2024-01-20",
+      goal: "Code Quality",
+      status: "PENDING",
+      createdAt: "2024-01-15T08:00:00Z",
+      updatedAt: "2024-01-15T08:00:00Z"
     }
   ];
 
@@ -170,6 +196,12 @@ export default function DashboardPage() {
             <Badge variant="secondary" className="bg-blue-500/10 text-blue-400 border-blue-500/20">
               <Target className="w-3 h-3 mr-2" />
               {pendingTasks.length} remaining
+            </Badge>
+            <Badge variant="secondary" className="bg-purple-500/10 text-purple-400 border-purple-500/20">
+              <Sparkles className="w-3 h-3 mr-2" />
+              <a href="/enhanced-tasks" className="hover:underline">
+                Try Enhanced Tasks
+              </a>
             </Badge>
           </div>
         </div>
