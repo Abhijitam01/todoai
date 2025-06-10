@@ -105,19 +105,20 @@ module.exports = {
   		}
   	}
   },
-  plugins: [require("tailwindcss/plugin")(function({ addUtilities }) {
-    addUtilities({
-      '.glow': {
-        'box-shadow': '0 0 20px rgba(59, 130, 246, 0.5)',
-      },
-      '.glow-purple': {
-        'box-shadow': '0 0 20px rgba(147, 51, 234, 0.5)',
-      },
-      '.glow-green': {
-        'box-shadow': '0 0 20px rgba(34, 197, 94, 0.5)',
-      },
-    })
-  }),
-      require("tailwindcss-animate")
-],
+  plugins: [
+    require("tailwindcss/plugin")(function({ addUtilities }) {
+      addUtilities({
+        '.glow': {
+          'box-shadow': '0 0 20px rgba(59, 130, 246, 0.5)',
+        },
+        '.glow-purple': {
+          'box-shadow': '0 0 20px rgba(147, 51, 234, 0.5)',
+        },
+        '.glow-green': {
+          'box-shadow': '0 0 20px rgba(34, 197, 94, 0.5)',
+        },
+      })
+    }),
+    require("tailwindcss-animate")
+  ],
 } 

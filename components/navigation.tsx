@@ -4,6 +4,7 @@ import { useState } from "react"
 import { Button } from "@/components/ui/button"
 import { ChevronDown, Target } from "lucide-react"
 import { JoinBetaModal } from "@/components/join-beta-modal"
+import Link from "next/link"
 
 export function Navigation() {
   const [isModalOpen, setIsModalOpen] = useState(false)
@@ -33,6 +34,9 @@ export function Navigation() {
               <a href="#resources" className="text-gray-300 hover:text-white transition-colors duration-300 transform hover:scale-105">
                 Resources
               </a>
+              <Link href="/dashboard" className="text-gray-300 hover:text-white transition-colors duration-300 transform hover:scale-105">
+                Dashboard
+              </Link>
               <Button 
                 onClick={() => setIsModalOpen(true)}
                 className="bg-red-500 hover:bg-red-600 text-white px-4 md:px-6 py-2 rounded-lg font-medium transform transition-all duration-300 hover:scale-105 hover:shadow-lg hover:shadow-red-500/25 group relative overflow-hidden"
