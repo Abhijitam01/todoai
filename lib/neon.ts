@@ -29,4 +29,18 @@ export type WaitlistEntry = {
   referrer: string | null
   created_at: string
   updated_at: string
+}
+
+export type FeedbackEntry = {
+  id: number
+  email: string
+  love: string
+  want: string | null
+  changes: string | null
+  pricing: string | null
+  rating: number
+  recommendation: number | null
+  source: string
+  created_at: string
+  updated_at: string
 } 

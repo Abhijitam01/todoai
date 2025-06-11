@@ -3,6 +3,7 @@
 import { motion } from "framer-motion"
 import { Target, Mail, MessageCircle, Heart, Rocket, Clock, Code, Users } from "lucide-react"
 import { useState } from "react"
+import Link from "next/link"
 
 const footerSections = [
   {
@@ -18,11 +19,11 @@ const footerSections = [
   {
     title: "BETA ACCESS",
     links: [
-      { name: "Join Waitlist", href: "#waitlist" },
+      { name: "Join Waitlist", href: "/waitlist" },
       { name: "Early Access", href: "#early-access" },
       { name: "Beta Features", href: "#beta" },
       { name: "Development Updates", href: "#updates" },
-      { name: "Feedback Portal", href: "#feedback" }
+      { name: "Share Feedback", href: "/feedback" }
     ]
   },
   {
@@ -143,12 +144,21 @@ export function Footer() {
                 <ul className="space-y-4">
                   {section.links.map((link, linkIndex) => (
                     <li key={linkIndex}>
-                      <a
-                        href={link.href}
-                        className="text-gray-300 hover:text-white transition-colors duration-300 text-sm"
-                      >
-                        {link.name}
-                      </a>
+                      {link.href.startsWith('/') ? (
+                        <Link
+                          href={link.href}
+                          className="text-gray-300 hover:text-white transition-colors duration-300 text-sm"
+                        >
+                          {link.name}
+                        </Link>
+                      ) : (
+                        <a
+                          href={link.href}
+                          className="text-gray-300 hover:text-white transition-colors duration-300 text-sm"
+                        >
+                          {link.name}
+                        </a>
+                      )}
                     </li>
                   ))}
                 </ul>
