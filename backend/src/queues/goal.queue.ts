@@ -1,5 +1,6 @@
 import { Queue, Worker, Job } from 'bullmq';
-import { PrismaClient } from '../src/generated/prisma';
+-import { PrismaClient } from '../src/generated/prisma';
++import { PrismaClient } from '../generated/prisma';
 import { generateGoalPlan } from '../services/openai.service';
 import { QUEUE_CONFIG, QUEUES } from '../config/queue.config';
 
