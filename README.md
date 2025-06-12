@@ -10,6 +10,7 @@
   [![TypeScript](https://img.shields.io/badge/TypeScript-5.0-blue)](https://typescriptlang.org/)
   [![Tailwind CSS](https://img.shields.io/badge/Tailwind%20CSS-3.4-06B6D4)](https://tailwindcss.com/)
   [![NeonDB](https://img.shields.io/badge/NeonDB-PostgreSQL-00D9FF)](https://neon.tech/)
+  ![CodeRabbit Pull Request Reviews](https://img.shields.io/coderabbit/prs/github/Abhijitam01/todoai?utm_source=oss&utm_medium=github&utm_campaign=Abhijitam01%2Ftodoai&labelColor=171717&color=FF570A&link=https%3A%2F%2Fcoderabbit.ai&label=CodeRabbit+Reviews)
 </div>
 
 ---
