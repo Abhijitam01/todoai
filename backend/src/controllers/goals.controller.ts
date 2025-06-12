@@ -1,5 +1,6 @@
 import { Request, Response } from 'express';
-import { PrismaClient } from '../../src/src/generated/prisma';
+-import { PrismaClient } from '../../src/src/generated/prisma';
++import { PrismaClient } from '../../generated/prisma';
 import { z } from 'zod';
 import { goalQueue } from '../queues/goal.queue';
 
