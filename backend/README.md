@@ -68,6 +68,35 @@ TodoAI is an AI-powered goal and task management backend, built with Node.js, Ex
    yarn dev
    ```
 
+6. Start the background worker (in a separate terminal):
+   ```sh
+   npm run worker
+   # or for development with auto-restart:
+   npm run worker:dev
+   ```
+
+---
+
+## Background Job Processing
+
+The application uses BullMQ and Redis for background job processing, particularly for AI-powered goal plan generation. This ensures the API remains responsive while computationally expensive operations run asynchronously.
+
+### Architecture
+- **Queue**: `goalQueue` (defined in `src/queues/goal.queue.ts`) - handles job queuing
+- **Worker**: `src/worker.ts` - processes jobs in a separate process
+- **Redis**: Used as the job queue backend
+
+### Running in Production
+1. Ensure Redis is running and accessible
+2. Start the main API server: `npm start`
+3. Start one or more worker processes: `npm run worker`
+4. Workers can be scaled horizontally by running multiple instances
+
+### Job Types
+- **Goal Planning**: Generates AI-powered learning plans when goals are created
+- Jobs include retry logic (3 attempts) and proper error handling
+- Failed jobs update goal status to 'FAILED' for user visibility
+
 ---
 
 ## Database & Migrations

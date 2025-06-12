@@ -4,7 +4,7 @@ export const REDIS_CONFIG = {
   host: process.env.REDIS_HOST || 'localhost',
   port: parseInt(process.env.REDIS_PORT || '6379'),
   password: process.env.REDIS_PASSWORD,
-  tls: process.env.REDIS_TLS === 'true',
+  ...(process.env.REDIS_TLS === 'true' && { tls: {} }),
 };
 
 export const QUEUE_CONFIG: QueueOptions = {
@@ -15,7 +15,6 @@ export const QUEUE_CONFIG: QueueOptions = {
       type: 'exponential',
       delay: 1000,
     },
-    timeout: 30000, // 30 seconds
     removeOnComplete: true,
     removeOnFail: false,
   },

@@ -34,8 +34,8 @@ const router = Router();
  *           description: "Hours per day to dedicate to this goal"
  *         skill_level:
  *           type: string
- *           enum: [beginner, intermediate, advanced]
- *           example: "beginner"
+ *           enum: [BEGINNER, INTERMEDIATE, ADVANCED, EXPERT]
+ *           example: "BEGINNER"
  *           description: "Current skill level for this topic"
  *     Goal:
  *       type: object
@@ -54,7 +54,7 @@ const router = Router();
  *           example: 1.5
  *         skill_level:
  *           type: string
- *           example: "beginner"
+ *           example: "BEGINNER"
  *         status:
  *           type: string
  *           enum: [PLANNING, ACTIVE, PAUSED, COMPLETED, ARCHIVED, FAILED]

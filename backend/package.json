@@ -4,7 +4,10 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "test": "jest"
+    "test": "jest",
+    "dev": "nodemon --exec ts-node src/index.ts",
+    "worker": "ts-node src/worker.ts",
+    "worker:dev": "nodemon --exec ts-node src/worker.ts"
   },
   "keywords": [],
   "author": "",

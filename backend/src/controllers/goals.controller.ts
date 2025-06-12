@@ -1,5 +1,5 @@
 import { Request, Response } from 'express';
-import { PrismaClient } from '../../src/src/generated/prisma';
+import { PrismaClient } from '../generated/prisma';
 import { z } from 'zod';
 import { goalQueue } from '../queues/goal.queue';
 
@@ -9,7 +9,7 @@ const createGoalSchema = z.object({
   name: z.string().min(1, 'Goal name is required'),
   duration_days: z.number().int().min(1).max(365),
   time_per_day_hours: z.number().min(0.5).max(8),
-  skill_level: z.enum(['beginner', 'intermediate', 'advanced']),
+  skill_level: z.enum(['BEGINNER', 'INTERMEDIATE', 'ADVANCED', 'EXPERT']),
 });
 
 export const createGoal = async (req: Request, res: Response): Promise<void> => {
@@ -30,7 +30,7 @@ export const createGoal = async (req: Request, res: Response): Promise<void> => 
         duration_days: validatedData.duration_days,
         time_per_day_hours: validatedData.time_per_day_hours,
         skill_level: validatedData.skill_level,
-        status: 'PLANNING',
+        status: 'PLANNING' as const,
         progress_percentage: 0,
         start_date: new Date(),
         end_date: new Date(Date.now() + validatedData.duration_days * 24 * 60 * 60 * 1000),
@@ -45,6 +45,12 @@ export const createGoal = async (req: Request, res: Response): Promise<void> => 
       duration_days: validatedData.duration_days,
       time_per_day_hours: validatedData.time_per_day_hours,
       skill_level: validatedData.skill_level,
+    });
+
+    // Update goal with job ID for efficient retrieval
+    await prisma.goal.update({
+      where: { id: goal.id },
+      data: { jobId: job.id as string },
     });
 
     res.status(202).json({
@@ -93,25 +99,25 @@ export const getGoalStatus = async (req: Request, res: Response): Promise<void> 
       return;
     }
 
-    // Get job status if goal is in PLANNING state
+    // Get job status if goal is in PLANNING state and has a jobId
     let jobStatus = null;
-    if (goal.status === 'PLANNING') {
-      const jobs = await goalQueue.getJobs(['active', 'waiting', 'failed', 'completed']);
-      const job = jobs.find(j => {
-        const data = j.data as any;
-        return data.goalId === id;
-      });
-      
-      if (job) {
-        const state = await job.getState();
-        jobStatus = {
-          state,
-          failedReason: job.failedReason,
-          progress: job.progress,
-          timestamp: job.timestamp,
-          processedOn: job.processedOn,
-          finishedOn: job.finishedOn,
-        };
+    if (goal.status === 'PLANNING' && goal.jobId) {
+      try {
+        const job = await goalQueue.getJob(goal.jobId);
+        
+        if (job) {
+          const state = await job.getState();
+          jobStatus = {
+            state,
+            failedReason: job.failedReason,
+            progress: job.progress,
+            timestamp: job.timestamp,
+            processedOn: job.processedOn,
+            finishedOn: job.finishedOn,
+          };
+        }
+      } catch (error) {
+        console.warn(`Job ${goal.jobId} not found for goal ${id}`);
       }
     }
 
