@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button"
 import { Avatar, AvatarFallback } from "@/components/ui/avatar"
 import { Separator } from "@/components/ui/separator"
 import { motion } from "framer-motion"
+import { ThemeToggle } from "@/components/ui/ThemeToggle"
 
 interface TopbarProps {
   onMenuClick: () => void
@@ -82,17 +83,8 @@ export function Topbar({ onMenuClick }: TopbarProps) {
 
       {/* Right side */}
       <div className="flex items-center gap-x-4 lg:gap-x-6">
-        {/* TODO: Add theme toggle button */}
-        {/* <Button
-          variant="outline"
-          size="sm"
-          className="border-gray-700 bg-gray-800 hover:bg-gray-700 text-gray-300 hover:text-white"
-        >
-          <Sun className="h-4 w-4" />
-        </Button> */}
-
+        <ThemeToggle />
         <Separator orientation="vertical" className="h-6 bg-gray-700" />
-
         {/* User avatar */}
         <div className="flex items-center gap-x-3">
           {/* TODO: Replace with real user data */}
