@@ -134,8 +134,18 @@ export const api = {
   auth: {
     login: (credentials: { email: string; password: string }) =>
       apiClient.post('/auth/login', credentials),
-    signup: (userData: { email: string; password: string; name: string }) =>
-      apiClient.post('/auth/signup', userData),
+    signup: async (userData: { email: string; password: string; name: string }) => {
+      // TODO: Replace this mock with a real API call
+      return new Promise((resolve, reject) => {
+        setTimeout(() => {
+          if (userData.email === 'fail@example.com') {
+            reject({ message: 'Email already in use', status: 400 });
+          } else {
+            resolve({ data: { user: { name: userData.name, email: userData.email } }, status: 200 });
+          }
+        }, 1000);
+      });
+    },
     logout: () => apiClient.post('/auth/logout'),
     refreshToken: () => apiClient.post('/auth/refresh'),
   },
