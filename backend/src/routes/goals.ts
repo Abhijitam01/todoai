@@ -1,5 +1,5 @@
 import { Router } from 'express';
-import { createGoal } from '../controllers/goals.controller';
+import { createGoal, getGoalStatus } from '../controllers/goals.controller';
 import { authMiddleware } from '../middleware/auth.middleware';
 
 const router = Router();
@@ -92,9 +92,43 @@ const router = Router();
  *         status:
  *           type: string
  *           example: "PLANNING"
+ *         jobId:
+ *           type: string
+ *           example: "job:123"
  *         message:
  *           type: string
  *           example: "Goal created successfully. AI plan generation in progress."
+ *     GoalStatusResponse:
+ *       type: object
+ *       properties:
+ *         id:
+ *           type: string
+ *         name:
+ *           type: string
+ *         status:
+ *           type: string
+ *         progress_percentage:
+ *           type: number
+ *         jobStatus:
+ *           type: object
+ *           properties:
+ *             state:
+ *               type: string
+ *               enum: [active, waiting, failed, completed]
+ *             failedReason:
+ *               type: string
+ *             progress:
+ *               type: number
+ *             timestamp:
+ *               type: string
+ *             processedOn:
+ *               type: string
+ *             finishedOn:
+ *               type: string
+ *         milestones:
+ *           type: array
+ *           items:
+ *             type: object
  */
 
 /**
@@ -134,5 +168,36 @@ const router = Router();
  *               $ref: '#/components/schemas/Error'
  */
 router.post('/', authMiddleware, createGoal);
+
+/**
+ * @openapi
+ * /goals/{id}/status:
+ *   get:
+ *     summary: Get goal status and plan generation progress
+ *     description: Returns the current status of a goal and its AI plan generation progress
+ *     tags:
+ *       - Goals
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: Goal ID
+ *     responses:
+ *       200:
+ *         description: Goal status retrieved successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/GoalStatusResponse'
+ *       401:
+ *         description: Unauthorized - invalid or missing token
+ *       404:
+ *         description: Goal not found
+ */
+router.get('/:id/status', authMiddleware, getGoalStatus);
 
 export default router; 

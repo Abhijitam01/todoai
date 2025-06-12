@@ -1,7 +1,7 @@
 import { Request, Response } from 'express';
 import { PrismaClient } from '../../src/src/generated/prisma';
 import { z } from 'zod';
-import { generateGoalPlan } from '../services/openai.service';
+import { goalQueue } from '../queues/goal.queue';
 
 const prisma = new PrismaClient();
 
@@ -22,10 +22,7 @@ export const createGoal = async (req: Request, res: Response): Promise<void> => 
       return;
     }
 
-    // Generate AI plan
-    const plan = await generateGoalPlan(validatedData);
-
-    // Create goal with milestones and tasks
+    // Create initial goal entry
     const goal = await prisma.goal.create({
       data: {
         userId,
@@ -37,32 +34,25 @@ export const createGoal = async (req: Request, res: Response): Promise<void> => 
         progress_percentage: 0,
         start_date: new Date(),
         end_date: new Date(Date.now() + validatedData.duration_days * 24 * 60 * 60 * 1000),
-        milestones: {
-          create: plan.map((milestone, index) => ({
-            name: milestone.milestone,
-            week_number: milestone.week,
-            order_in_goal: index + 1,
-            tasks: {
-              create: milestone.tasks.map((task, taskIndex) => ({
-                description: task.task,
-                original_planned_date: new Date(Date.now() + (milestone.week - 1) * 7 * 24 * 60 * 60 * 1000 + (task.day - 1) * 24 * 60 * 60 * 1000),
-                current_due_date: new Date(Date.now() + (milestone.week - 1) * 7 * 24 * 60 * 60 * 1000 + (task.day - 1) * 24 * 60 * 60 * 1000),
-                status: 'PENDING',
-                order_in_goal: taskIndex + 1,
-                week_number: milestone.week,
-                day_number_in_week: task.day,
-              })),
-            },
-          })),
-        },
       },
     });
 
-    res.status(201).json({
+    // Add job to queue
+    const job = await goalQueue.add('generate-plan', {
+      userId,
+      goalId: goal.id,
+      name: validatedData.name,
+      duration_days: validatedData.duration_days,
+      time_per_day_hours: validatedData.time_per_day_hours,
+      skill_level: validatedData.skill_level,
+    });
+
+    res.status(202).json({
       id: goal.id,
       name: goal.name,
       status: goal.status,
-      message: 'Goal created successfully with AI-generated plan',
+      jobId: job.id,
+      message: 'Goal created successfully. AI plan generation in progress.',
     });
   } catch (error) {
     if (error instanceof z.ZodError) {
@@ -70,6 +60,71 @@ export const createGoal = async (req: Request, res: Response): Promise<void> => 
       return;
     }
     console.error('Error creating goal:', error);
+    res.status(500).json({ error: 'Internal server error', code: 500 });
+  }
+};
+
+export const getGoalStatus = async (req: Request, res: Response): Promise<void> => {
+  try {
+    const { id } = req.params;
+    const userId = req.user?.id;
+
+    if (!userId) {
+      res.status(401).json({ error: 'User not authenticated', code: 401 });
+      return;
+    }
+
+    const goal = await prisma.goal.findFirst({
+      where: {
+        id,
+        userId,
+      },
+      include: {
+        milestones: {
+          include: {
+            tasks: true,
+          },
+        },
+      },
+    });
+
+    if (!goal) {
+      res.status(404).json({ error: 'Goal not found', code: 404 });
+      return;
+    }
+
+    // Get job status if goal is in PLANNING state
+    let jobStatus = null;
+    if (goal.status === 'PLANNING') {
+      const jobs = await goalQueue.getJobs(['active', 'waiting', 'failed', 'completed']);
+      const job = jobs.find(j => {
+        const data = j.data as any;
+        return data.goalId === id;
+      });
+      
+      if (job) {
+        const state = await job.getState();
+        jobStatus = {
+          state,
+          failedReason: job.failedReason,
+          progress: job.progress,
+          timestamp: job.timestamp,
+          processedOn: job.processedOn,
+          finishedOn: job.finishedOn,
+        };
+      }
+    }
+
+    res.status(200).json({
+      id: goal.id,
+      name: goal.name,
+      status: goal.status,
+      progress_percentage: goal.progress_percentage,
+      jobStatus,
+      milestones: goal.milestones,
+    });
+  } catch (error) {
+    console.error('Error getting goal status:', error);
     res.status(500).json({ error: 'Internal server error', code: 500 });
   }
 }; 
