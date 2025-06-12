@@ -91,9 +91,21 @@ TodoAI is an AI-powered goal and task management backend, built with Node.js, Ex
 - Endpoints follow REST conventions and are versioned under `/api/v1`.
 - **Swagger/OpenAPI docs are available at [`/api/v1/docs`](http://localhost:5000/api/v1/docs) after starting the server.**
 - The raw OpenAPI JSON is available at [`/api-docs.json`](http://localhost:5000/api-docs.json).
-- Docs are auto-generated from route/controller JSDoc comments and `Instructions/backend.md`.
-- To update docs, edit route/controller comments or the backend.md, then restart the server.
+- Docs are auto-generated from route/controller JSDoc comments and include:
+  - **Authentication endpoints**: `/auth/signup`, `/auth/login`, `/auth/me`
+  - **Goals endpoints**: `/goals` (create goal with AI planning)
+  - **Tasks endpoints**: `/tasks/today`, `/tasks` (with filters), `/tasks/:id` (update)
+- To update docs, edit route/controller comments, then restart the server.
 - In production, `/api/v1/docs` can be protected with basic auth by setting `SWAGGER_PROTECT=true` and `SWAGGER_USER`/`SWAGGER_PASS` in your environment.
+
+### Current API Endpoints
+- `POST /api/auth/signup` - Register new user
+- `POST /api/auth/login` - Login user  
+- `GET /api/auth/me` - Get current user (requires auth)
+- `POST /api/goals` - Create goal with AI planning (requires auth)
+- `GET /api/tasks/today` - Get today's tasks (requires auth) *[planned]*
+- `GET /api/tasks` - Get tasks with filters (requires auth) *[planned]*
+- `PATCH /api/tasks/:id` - Update task status (requires auth) *[planned]*
 
 ---
 
