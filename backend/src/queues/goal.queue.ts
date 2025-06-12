@@ -98,4 +98,5 @@ goalWorker.on('failed', async (job: Job<GoalJobData, GoalJobResult>, err: Error)
 process.on('SIGTERM', async () => {
   await goalWorker.close();
   await goalQueue.close();
-}); 
+  await prisma.$disconnect();
+});
