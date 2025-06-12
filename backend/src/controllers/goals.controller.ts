@@ -1,6 +1,8 @@
 import { Request, Response } from 'express';
--import { PrismaClient } from '../../src/src/generated/prisma';
-+import { PrismaClient } from '../../generated/prisma';
+// backend/src/controllers/goals.controller.ts
+
+// Remove the bad import and keep only the correct one:
+import { PrismaClient } from '../../generated/prisma';
 import { z } from 'zod';
 import { goalQueue } from '../queues/goal.queue';
 
