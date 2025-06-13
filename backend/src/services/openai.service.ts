@@ -1,9 +1,8 @@
-import { OpenAIApi, Configuration } from 'openai';
+import OpenAI from 'openai';
 
-const configuration = new Configuration({
+const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY,
 });
-const openai = new OpenAIApi(configuration);
 
 export async function generateGoalPlan({ title, durationDays, timePerDayMinutes, skillLevel }: {
   title: string;
@@ -14,10 +13,10 @@ export async function generateGoalPlan({ title, durationDays, timePerDayMinutes,
   const prompt = `Generate a detailed ${durationDays}-day learning plan for "${title}" at ${skillLevel} level with ${timePerDayMinutes} minutes/day. Break it into weekly milestones and daily tasks. Return JSON in the following format:\n\n[{ week: number, milestone: string, tasks: [{ day: number, task: string, description?: string }] }]`;
 
   let retries = 2;
-  let lastError;
+  let lastError: any;
   while (retries-- > 0) {
     try {
-      const response = await openai.createChatCompletion({
+      const response = await openai.chat.completions.create({
         model: 'gpt-3.5-turbo',
         messages: [
           { role: 'system', content: 'You are a helpful AI learning coach.' },
@@ -25,8 +24,8 @@ export async function generateGoalPlan({ title, durationDays, timePerDayMinutes,
         ],
         temperature: 0.7,
         max_tokens: 1500,
-      }, { timeout: 20000 });
-      const content = response.data.choices[0].message?.content;
+      });
+      const content = response.choices[0].message?.content;
       if (!content) throw new Error('No response from OpenAI');
       // Try to parse JSON from response
       const jsonStart = content.indexOf('[');
