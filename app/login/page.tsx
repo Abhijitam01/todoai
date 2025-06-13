@@ -6,7 +6,7 @@ import { z } from "zod";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import Link from "next/link";
-import { api } from "@/lib/api";
+import api from "@/lib/api";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Form, FormField, FormItem, FormLabel, FormControl, FormMessage } from "@/components/ui/form";
@@ -33,24 +33,21 @@ export default function LoginPage() {
   const onSubmit = async (values: LoginFormValues) => {
     try {
       // TODO: Replace mock with real API call
-      const res = await api.auth.login({
+      const res = await api.post('/auth/login', {
         email: values.email,
         password: values.password,
       });
-      // Simulate saving accessToken
-      localStorage.setItem("accessToken", "fake-access-token");
-      addToast({
-        title: "Signed in!",
-        description: "Welcome back to TodoAI.",
-        type: "success",
-      });
-      router.push("/dashboard");
+      
+      // Handle successful login
+      console.log("Login successful:", res.data);
+      
+      // TODO: Update auth store with token and redirect
+      // useAuthStore.getState().login(res.data.token, res.data.user);
+      // router.push('/dashboard');
+      
     } catch (err: any) {
-      addToast({
-        title: "Invalid credentials",
-        description: "Please check your email and password.",
-        type: "error",
-      });
+      console.error("Login failed:", err);
+      // Handle login error
     }
   };
 

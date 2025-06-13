@@ -26,9 +26,9 @@ const statusBadge = (status: "active" | "completed" | "paused") => {
     return <Badge className="bg-green-500/10 text-green-500 border-green-500/20">✅ Completed</Badge>;
   }
   if (status === "paused") {
-    return <Badge className="bg-yellow-500/10 text-yellow-500 border-yellow-500/20">🟡 Paused</Badge>;
+    return <Badge className="bg-yellow-500/10 text-yellow-500 border-yellow-500/20">⏸️ Paused</Badge>;
   }
-  return <Badge className="bg-yellow-500/10 text-yellow-500 border-yellow-500/20">🟡 Active</Badge>;
+  return <Badge className="bg-blue-500/10 text-blue-500 border-blue-500/20">🔵 Active</Badge>;
 };
 
 export const GoalCard: React.FC<GoalCardProps> = ({ goal }) => {
@@ -49,12 +49,20 @@ export const GoalCard: React.FC<GoalCardProps> = ({ goal }) => {
           {statusBadge(goal.status)}
         </CardHeader>
         <CardContent className="space-y-3">
+          {goal.description && (
+            <p className="text-sm text-gray-600">{goal.description}</p>
+          )}
           <div className="flex items-center gap-2 text-sm text-gray-500">
             <Calendar className="w-4 h-4" />
             <span>
               {goal.startDate} - {goal.endDate}
             </span>
           </div>
+          {goal.category && (
+            <Badge variant="outline" className="text-xs">
+              {goal.category}
+            </Badge>
+          )}
           <div className="flex items-center justify-between mt-2">
             <span className="text-xs text-gray-500">Progress</span>
             <span className="text-xs font-semibold">{goal.progress}%</span>

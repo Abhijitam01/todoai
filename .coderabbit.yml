@@ -1,8 +1,0 @@
-review:
-  enable: true
-  level: thorough   # Options: light, standard, thorough
-  language: auto     # Detects language automatically
-documentation:
-  generate: true     # Adds summaries to PRs
-tests:
-  suggest_improvements: true

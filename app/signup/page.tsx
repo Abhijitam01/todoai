@@ -6,7 +6,7 @@ import { z } from "zod";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import Link from "next/link";
-import { api } from "@/lib/api";
+import api from "@/lib/api";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
@@ -41,21 +41,22 @@ export default function SignupPage() {
   const onSubmit = async (values: SignupFormValues) => {
     try {
       // TODO: Replace mock with real API call
-      await api.auth.signup({
+      await api.post('/auth/signup', {
         name: values.name,
         email: values.email,
         password: values.password,
       });
+      
       addToast({
         title: "Account created!",
-        description: "Welcome to TodoAI. Let's start planning your goals.",
+        description: "Welcome to TodoAI.",
         type: "success",
       });
-      router.push("/dashboard");
+      router.push("/login");
     } catch (err: any) {
       addToast({
         title: "Signup failed",
-        description: err?.message || "Something went wrong. Please try again.",
+        description: "Please try again with a different email.",
         type: "error",
       });
     }
