@@ -9,19 +9,24 @@ import React from "react";
 export interface Goal {
   id: string;
   title: string;
+  description?: string;
+  category?: string;
   startDate: string;
   endDate: string;
   progress: number;
-  status: "active" | "completed";
+  status: "active" | "completed" | "paused";
 }
 
 interface GoalCardProps {
   goal: Goal;
 }
 
-const statusBadge = (status: "active" | "completed") => {
+const statusBadge = (status: "active" | "completed" | "paused") => {
   if (status === "completed") {
     return <Badge className="bg-green-500/10 text-green-500 border-green-500/20">✅ Completed</Badge>;
+  }
+  if (status === "paused") {
+    return <Badge className="bg-yellow-500/10 text-yellow-500 border-yellow-500/20">🟡 Paused</Badge>;
   }
   return <Badge className="bg-yellow-500/10 text-yellow-500 border-yellow-500/20">🟡 Active</Badge>;
 };

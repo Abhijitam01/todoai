@@ -1,4 +1,4 @@
-import axios, { AxiosRequestConfig, AxiosResponse, AxiosError } from "axios";
+import axios, { AxiosResponse, AxiosError, InternalAxiosRequestConfig } from "axios";
 import { useAuthStore } from "./store/auth";
 
 // If you see a type error for axios, run: npm install --save-dev @types/axios
@@ -10,11 +10,11 @@ const api = axios.create({
 
 // Add token to every request
 api.interceptors.request.use(
-  (config: AxiosRequestConfig) => {
+  (config: InternalAxiosRequestConfig) => {
     const token = useAuthStore.getState().token;
     if (token) {
       config.headers = config.headers || {};
-      (config.headers as Record<string, string>).Authorization = `Bearer ${token}`;
+      config.headers.Authorization = `Bearer ${token}`;
     }
     return config;
   },
@@ -35,4 +35,5 @@ api.interceptors.response.use(
   }
 );
 
-export default api; 
+export default api;
+export { api }; 
