@@ -1,5 +1,6 @@
 import { Request, Response, NextFunction } from 'express';
 import { UnauthorizedError } from './errorHandler';
+import { verifyAccessToken } from '@todoai/auth'
 
 // Extend Request interface to include user
 declare global {
@@ -32,21 +33,17 @@ export function authMiddleware(req: Request, res: Response, next: NextFunction):
       throw new UnauthorizedError('Token is required');
     }
 
-    // TODO: Implement proper JWT verification
-    // For now, we'll accept any token that looks like a JWT
-    if (token.length < 10) {
-      throw new UnauthorizedError('Invalid token format');
+    // Verify access token using shared auth package
+    const payload = verifyAccessToken(token)
+
+    req.user = {
+      id: payload.userId,
+      email: payload.email,
+      role: 'user',
     }
 
-    // Mock user data - replace with actual JWT verification
-    req.user = {
-      id: 'user-123',
-      email: 'user@example.com',
-      role: 'user'
-    };
-
     next();
-  } catch (error) {
-    next(error);
+  } catch (error: unknown) {
+    next(error as Error);
   }
 } 
