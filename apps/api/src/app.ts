@@ -2,82 +2,135 @@ import express from 'express';
 import cors from 'cors';
 import helmet from 'helmet';
 import compression from 'compression';
-import morgan from 'morgan';
+import { createServer } from 'http';
+import { Server } from 'socket.io';
+import jwt from 'jsonwebtoken';
 import dotenv from 'dotenv';
 
 // Import routes
 import goalsRouter from './routes/goals';
 import authRouter from './routes/auth';
 import tasksRouter from './routes/tasks';
+import waitlistRouter from './routes/waitlist';
+import feedbackRouter from './routes/feedback';
+import aiRouter from './routes/ai';
+import analyticsRouter from './routes/analytics';
+import docsRouter from './routes/docs';
 
 // Import middleware
 import { errorHandler } from './middleware/errorHandler';
 import { authMiddleware } from './middleware/auth';
+import RealtimeService, { initializeRealTimeService } from './services/realtime';
 
 // Load environment variables
 dotenv.config();
 
 const app = express();
+const server = createServer(app);
 
-// Security middleware
+// Initialize Socket.IO with legendary configuration
+const io = new Server(server, {
+  cors: {
+    origin: process.env.FRONTEND_URL || "http://localhost:3000",
+    credentials: true
+  },
+  transports: ['websocket', 'polling'],
+  pingTimeout: 60000,
+  pingInterval: 25000
+});
+
+// Legendary middleware stack
 app.use(helmet({
+  crossOriginEmbedderPolicy: false,
   contentSecurityPolicy: {
     directives: {
       defaultSrc: ["'self'"],
-      styleSrc: ["'self'", "'unsafe-inline'"],
-      scriptSrc: ["'self'"],
+      styleSrc: ["'self'", "'unsafe-inline'", "https:"],
+      scriptSrc: ["'self'", "'unsafe-eval'"],
       imgSrc: ["'self'", "data:", "https:"],
+      connectSrc: ["'self'", "wss:", "ws:"],
     },
   },
 }));
 
-// CORS configuration
+app.use(compression() as any);
 app.use(cors({
-  origin: process.env.FRONTEND_URL || 'http://localhost:3000',
-  credentials: true,
-  methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With'],
+  origin: process.env.FRONTEND_URL || "http://localhost:3000",
+  credentials: true
 }));
 
-// Compression middleware
-app.use(compression() as any);
-
-// Logging middleware
-app.use(morgan(process.env.NODE_ENV === 'production' ? 'combined' : 'dev'));
-
-// Body parsing middleware
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 
-// Health check endpoint
+// Health check endpoint - legendary status
 app.get('/health', (req, res) => {
-  res.status(200).json({
-    status: 'OK',
+  const healthStatus = {
+    status: 'legendary',
     timestamp: new Date().toISOString(),
     uptime: process.uptime(),
-    environment: process.env.NODE_ENV || 'development',
+    memory: process.memoryUsage(),
     version: process.env.npm_package_version || '1.0.0',
-  });
+    environment: process.env.NODE_ENV || 'development',
+    features: {
+      realtime: true,
+      ai: true,
+      analytics: true,
+      achievements: true,
+      collaboration: true
+    }
+  };
+  res.json(healthStatus);
 });
 
 // API routes
 app.use('/api/v1/auth', authRouter);
 app.use('/api/v1/goals', authMiddleware, goalsRouter);
 app.use('/api/v1/tasks', authMiddleware, tasksRouter);
+app.use('/api/v1/waitlist', waitlistRouter);
+app.use('/api/v1/feedback', feedbackRouter);
+app.use('/api/v1/ai', aiRouter);
+app.use('/api/v1/analytics', analyticsRouter);
 
-// Root endpoint
+// Root endpoint with legendary API documentation
+app.use('/api/docs', docsRouter);
 app.get('/', (req, res) => {
   res.json({
-    message: 'TodoAI API Server',
+    name: 'TodoAI API',
     version: '2.0.0',
-    status: 'running',
-    endpoints: {
-      health: '/health',
-      auth: '/api/v1/auth',
-      goals: '/api/v1/goals',
-      tasks: '/api/v1/tasks',
+    status: 'legendary',
+    message: '🚀 Welcome to the most advanced productivity API on Earth!',
+    documentation: '/api/docs',
+    health: '/health',
+    features: {
+      ai: 'Advanced task prioritization and goal optimization',
+      realtime: 'Live collaboration and progress updates',
+      analytics: 'Deep productivity insights and recommendations',
+      achievements: 'Gamified productivity with smart rewards',
     },
+    author: 'Built with legendary AI assistance',
+    timestamp: new Date().toISOString(),
   });
+});
+
+// Initialize legendary real-time service
+initializeRealTimeService(io);
+
+// Legendary error handling
+app.use((err: any, req: express.Request, res: express.Response, next: express.NextFunction) => {
+  console.error('🔥 Legendary Error Handler:', err);
+  
+  const errorResponse = {
+    success: false,
+    error: {
+      message: err.message || 'An unexpected error occurred',
+      code: err.code || 'INTERNAL_ERROR',
+      timestamp: new Date().toISOString(),
+      requestId: req.headers['x-request-id'] || Math.random().toString(36).substring(7)
+    }
+  };
+
+  const statusCode = err.statusCode || err.status || 500;
+  res.status(statusCode).json(errorResponse);
 });
 
 // 404 handler
@@ -85,14 +138,25 @@ app.use('*', (req, res) => {
   res.status(404).json({
     success: false,
     error: {
+      message: 'Endpoint not found',
       code: 'NOT_FOUND',
-      message: `Route ${req.method} ${req.originalUrl} not found`,
-      timestamp: new Date().toISOString(),
-    },
+      path: req.originalUrl,
+      method: req.method,
+      timestamp: new Date().toISOString()
+    }
   });
 });
 
-// Global error handler (must be last)
-app.use(errorHandler);
+const PORT = process.env.PORT || 4000;
+
+server.listen(PORT, () => {
+  console.log(`
+🚀 LEGENDARY TodoAI API Server Running!
+📡 Port: ${PORT}
+🌐 Health: http://localhost:${PORT}/health
+⚡ Real-time: Socket.IO enabled
+🎯 Status: God-tier operational
+  `);
+});
 
 export default app; 
