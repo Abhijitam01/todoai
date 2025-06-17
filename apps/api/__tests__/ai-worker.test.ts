@@ -30,6 +30,9 @@ describe('AI Worker Integration', () => {
     await db.delete(users).where(eq(users.id, user.id));
   });
 
+// at the top of apps/api/__tests__/ai-worker.test.ts
+import '../src/queues/goal.worker'; // spin up the worker in-process
+
   it('should enqueue a plan revision job and update tasks', async () => {
     // Enqueue a job (simulate /revise endpoint)
     await goalQueue.add('revise-plan', {
@@ -40,8 +43,9 @@ describe('AI Worker Integration', () => {
       time_per_day_hours: 1,
       skill_level: 'beginner',
     });
-    // Wait for worker to process (in real test, poll or use events)
-    await new Promise((resolve) => setTimeout(resolve, 5000));
+    // Wait until at least one job on the queue finishes
+    await goalQueue.waitUntilReady();
+    await goalQueue.whenCurrentJobsFinished();
     // Check that new tasks were created
     const updatedTasks = await db.select().from(tasks).where(eq(tasks.goalId, goal.id));
     expect(updatedTasks.length).toBeGreaterThan(0);
