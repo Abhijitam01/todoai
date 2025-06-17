@@ -2,6 +2,8 @@ import { Router } from 'express';
 import { Request, Response, NextFunction } from 'express';
 import { db, goals } from '@todoai/database';
 import { and, eq } from 'drizzle-orm';
+import { goalQueue } from '../queues/goal.queue';
+import { goalsCreatedCounter, aiPlanRevisionsCounter } from '../app';
 
 const router = Router();
 
@@ -80,6 +82,7 @@ router.get('/', async (req: Request, res: Response, next: NextFunction) => {
 router.post('/', async (req: Request, res: Response, next: NextFunction) => {
   try {
     // TODO: Implement create goal logic
+    goalsCreatedCounter.inc();
     res.status(201).json({ 
       success: true, 
       message: 'Goal created successfully',
@@ -291,6 +294,58 @@ router.patch('/:id', async (req, res, next) => {
       success: true,
       message: 'Goal updated successfully',
       data: updatedGoal,
+    });
+  } catch (error) {
+    next(error);
+  }
+});
+
+/**
+ * @swagger
+ * /api/v1/goals/{id}/revise:
+ *   post:
+ *     summary: Request AI to revise the plan for a goal
+ *     tags: [Goals]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *     responses:
+ *       202:
+ *         description: Plan revision queued
+ */
+router.post('/:id/revise', async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const userId = (req as any).user?.id;
+    if (!userId) {
+      return res.status(401).json({ success: false, message: 'Unauthorized' });
+    }
+    const { id } = req.params;
+    if (!id) {
+      return res.status(400).json({ success: false, message: 'Goal ID is required' });
+    }
+    // Fetch the goal to get required fields
+    const [goal] = await db.select().from(goals).where(and(eq(goals.id, id), eq(goals.userId, userId), eq(goals.isArchived, false)));
+    if (!goal) {
+      return res.status(404).json({ success: false, message: 'Goal not found' });
+    }
+    // Enqueue a job for plan revision with all required fields
+    await goalQueue.add('revise-plan', {
+      goalId: id,
+      userId,
+      name: goal.title,
+      duration_days: 90, // TODO: Replace with actual duration if available
+      time_per_day_hours: 1, // TODO: Replace with actual value if available
+      skill_level: 'beginner', // TODO: Replace with actual value if available
+    });
+    aiPlanRevisionsCounter.inc();
+    res.status(202).json({
+      success: true,
+      message: 'Plan revision queued. AI will update your plan soon.',
     });
   } catch (error) {
     next(error);
