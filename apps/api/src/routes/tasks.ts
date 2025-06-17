@@ -2,8 +2,8 @@ import { Router } from 'express';
 import { Request, Response, NextFunction } from 'express';
 import { db, tasks, eq, and, or } from '@todoai/database';
 import { gte, lte } from 'drizzle-orm';
-import { tasksCompletedCounter } from '../app';
-
+-import { tasksCompletedCounter } from '../app';
++import { tasksCompletedCounter } from '../metrics';
 const router = Router();
 
 /**
