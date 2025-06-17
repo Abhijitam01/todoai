@@ -1,7 +1,59 @@
 import { Router } from 'express';
 import { Request, Response, NextFunction } from 'express';
+import { db, tasks, eq, and, or } from '@todoai/database';
+import { gte, lte } from 'drizzle-orm';
 
 const router = Router();
+
+/**
+ * @swagger
+ * /api/v1/tasks/today:
+ *   get:
+ *     summary: Get all tasks scheduled for today for the authenticated user
+ *     tags: [Tasks]
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: Today's tasks retrieved successfully
+ */
+router.get('/today', async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const userId = (req as any).user?.id;
+    if (!userId) {
+      return res.status(401).json({ success: false, message: 'Unauthorized' });
+    }
+
+    // Get today's date in UTC (YYYY-MM-DD)
+    const today = new Date();
+    const yyyy = today.getUTCFullYear();
+    const mm = String(today.getUTCMonth() + 1).padStart(2, '0');
+    const dd = String(today.getUTCDate()).padStart(2, '0');
+    const todayStr = `${yyyy}-${mm}-${dd}`;
+    const todayStart = new Date(`${todayStr}T00:00:00.000Z`);
+    const todayEnd = new Date(`${todayStr}T23:59:59.999Z`);
+
+    // Query tasks for this user, due today, status pending or overdue, not archived
+    const todayTasks = await db.select().from(tasks)
+      .where(
+        and(
+          eq(tasks.userId, userId),
+          or(eq(tasks.status, 'pending'), eq(tasks.status, 'overdue')),
+          eq(tasks.isArchived, false),
+          gte(tasks.dueDate, todayStart),
+          lte(tasks.dueDate, todayEnd)
+        )
+      );
+
+    res.json({
+      success: true,
+      message: "Today's tasks retrieved successfully",
+      data: todayTasks,
+    });
+  } catch (error) {
+    next(error);
+  }
+});
 
 /**
  * @swagger
@@ -28,16 +80,38 @@ const router = Router();
  */
 router.get('/', async (req: Request, res: Response, next: NextFunction) => {
   try {
-    // TODO: Implement get tasks logic
-    res.json({ 
-      success: true, 
+    const userId = (req as any).user?.id;
+    if (!userId) {
+      return res.status(401).json({ success: false, message: 'Unauthorized' });
+    }
+
+    const { goalId, status, startDate, endDate } = req.query;
+    const filters = [eq(tasks.userId, userId), eq(tasks.isArchived, false)];
+
+    if (goalId) {
+      filters.push(eq(tasks.goalId, goalId as string));
+    }
+    if (status) {
+      filters.push(eq(tasks.status, status as string));
+    }
+    if (startDate) {
+      filters.push(gte(tasks.dueDate, new Date(startDate as string)));
+    }
+    if (endDate) {
+      filters.push(lte(tasks.dueDate, new Date(endDate as string)));
+    }
+
+    const allTasks = await db.select().from(tasks).where(and(...filters));
+
+    res.json({
+      success: true,
       message: 'Tasks retrieved successfully',
-      data: [],
+      data: allTasks,
       pagination: {
         page: 1,
-        limit: 10,
-        total: 0,
-        totalPages: 0
+        limit: allTasks.length,
+        total: allTasks.length,
+        totalPages: 1
       }
     });
   } catch (error) {
@@ -115,16 +189,22 @@ router.post('/', async (req: Request, res: Response, next: NextFunction) => {
  */
 router.get('/:id', async (req: Request, res: Response, next: NextFunction) => {
   try {
-    // TODO: Implement get task by ID logic
-    res.json({ 
-      success: true, 
+    const userId = (req as any).user?.id;
+    if (!userId) {
+      return res.status(401).json({ success: false, message: 'Unauthorized' });
+    }
+    const { id } = req.params;
+    if (!id) {
+      return res.status(400).json({ success: false, message: 'Task ID is required' });
+    }
+    const [task] = await db.select().from(tasks).where(and(eq(tasks.id, id), eq(tasks.userId, userId), eq(tasks.isArchived, false)));
+    if (!task) {
+      return res.status(404).json({ success: false, message: 'Task not found' });
+    }
+    res.json({
+      success: true,
       message: 'Task retrieved successfully',
-      data: { 
-        id: req.params.id,
-        title: 'Sample Task',
-        description: 'This is a placeholder task',
-        status: 'todo'
-      }
+      data: task,
     });
   } catch (error) {
     next(error);
@@ -185,7 +265,7 @@ router.put('/:id', async (req: Request, res: Response, next: NextFunction) => {
  * @swagger
  * /api/v1/tasks/{id}:
  *   delete:
- *     summary: Delete a task
+ *     summary: Delete (archive) a task
  *     tags: [Tasks]
  *     security:
  *       - bearerAuth: []
@@ -197,14 +277,28 @@ router.put('/:id', async (req: Request, res: Response, next: NextFunction) => {
  *           type: string
  *     responses:
  *       200:
- *         description: Task deleted successfully
+ *         description: Task deleted (archived) successfully
  */
 router.delete('/:id', async (req: Request, res: Response, next: NextFunction) => {
   try {
-    // TODO: Implement delete task logic
-    res.json({ 
-      success: true, 
-      message: 'Task deleted successfully'
+    const userId = (req as any).user?.id;
+    if (!userId) {
+      return res.status(401).json({ success: false, message: 'Unauthorized' });
+    }
+    const { id } = req.params;
+    if (!id) {
+      return res.status(400).json({ success: false, message: 'Task ID is required' });
+    }
+    const [task] = await db.select().from(tasks).where(and(eq(tasks.id, id), eq(tasks.userId, userId), eq(tasks.isArchived, false)));
+    if (!task) {
+      return res.status(404).json({ success: false, message: 'Task not found' });
+    }
+    await db.update(tasks).set({ isArchived: true, updatedAt: new Date() }).where(and(eq(tasks.id, id), eq(tasks.userId, userId)));
+    const [archivedTask] = await db.select().from(tasks).where(and(eq(tasks.id, id), eq(tasks.userId, userId)));
+    res.json({
+      success: true,
+      message: 'Task deleted (archived) successfully',
+      data: archivedTask,
     });
   } catch (error) {
     next(error);
@@ -231,15 +325,98 @@ router.delete('/:id', async (req: Request, res: Response, next: NextFunction) =>
  */
 router.patch('/:id/complete', async (req: Request, res: Response, next: NextFunction) => {
   try {
-    // TODO: Implement complete task logic
-    res.json({ 
-      success: true, 
+    const userId = (req as any).user?.id;
+    if (!userId) {
+      return res.status(401).json({ success: false, message: 'Unauthorized' });
+    }
+    const { id } = req.params;
+    if (!id) {
+      return res.status(400).json({ success: false, message: 'Task ID is required' });
+    }
+    const [task] = await db.select().from(tasks).where(and(eq(tasks.id, id), eq(tasks.userId, userId), eq(tasks.isArchived, false)));
+    if (!task) {
+      return res.status(404).json({ success: false, message: 'Task not found' });
+    }
+    await db.update(tasks).set({ status: 'completed', completedAt: new Date(), updatedAt: new Date() }).where(and(eq(tasks.id, id), eq(tasks.userId, userId)));
+    const [updatedTask] = await db.select().from(tasks).where(and(eq(tasks.id, id), eq(tasks.userId, userId)));
+    // TODO: Trigger plan adaptation if needed (stub)
+    res.json({
+      success: true,
       message: 'Task marked as completed',
-      data: { 
-        id: req.params.id,
-        status: 'completed',
-        completedAt: new Date().toISOString()
-      }
+      data: updatedTask,
+    });
+  } catch (error) {
+    next(error);
+  }
+});
+
+/**
+ * @swagger
+ * /api/v1/tasks/{id}:
+ *   patch:
+ *     summary: Update a task
+ *     tags: [Tasks]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               status:
+ *                 type: string
+ *               dueDate:
+ *                 type: string
+ *               title:
+ *                 type: string
+ *               description:
+ *                 type: string
+ *               priority:
+ *                 type: string
+ *     responses:
+ *       200:
+ *         description: Task updated successfully
+ */
+router.patch('/:id', async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const userId = (req as any).user?.id;
+    if (!userId) {
+      return res.status(401).json({ success: false, message: 'Unauthorized' });
+    }
+    const { id } = req.params;
+    if (!id) {
+      return res.status(400).json({ success: false, message: 'Task ID is required' });
+    }
+    // Only allow updating certain fields
+    const { status, dueDate, title, description, priority } = req.body;
+    const [task] = await db.select().from(tasks).where(and(eq(tasks.id, id), eq(tasks.userId, userId), eq(tasks.isArchived, false)));
+    if (!task) {
+      return res.status(404).json({ success: false, message: 'Task not found' });
+    }
+    const updateData: any = {};
+    if (status) updateData.status = status;
+    if (dueDate) updateData.dueDate = new Date(dueDate);
+    if (title) updateData.title = title;
+    if (description) updateData.description = description;
+    if (priority) updateData.priority = priority;
+    if (Object.keys(updateData).length === 0) {
+      return res.status(400).json({ success: false, message: 'No valid fields to update' });
+    }
+    updateData.updatedAt = new Date();
+    await db.update(tasks).set(updateData).where(and(eq(tasks.id, id), eq(tasks.userId, userId)));
+    const [updatedTask] = await db.select().from(tasks).where(and(eq(tasks.id, id), eq(tasks.userId, userId)));
+    res.json({
+      success: true,
+      message: 'Task updated successfully',
+      data: updatedTask,
     });
   } catch (error) {
     next(error);

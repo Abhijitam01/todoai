@@ -2,6 +2,8 @@ import express from 'express';
 import rateLimit from 'express-rate-limit';
 import { z } from 'zod';
 import { sql } from '@vercel/postgres';
+import { generateGoalPlan } from '@todoai/ai'
+import { db, aiInteractions } from '@todoai/database'
 
 const router = express.Router();
 
@@ -804,5 +806,34 @@ function getDayName(dayNumber: number): string {
   const days = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
   return days[dayNumber] || 'Monday';
 }
+
+// 🚀 AI Goal Planning
+router.post('/plan-goal', aiRateLimit, async (req, res) => {
+  try {
+    const { title, description, userId } = req.body as { title?: string; description?: string; userId?: string }
+
+    if (!title) {
+      return res.status(400).json({ success: false, message: 'title is required' })
+    }
+
+    const result = await generateGoalPlan({ title, description })
+
+    // Store interaction
+    if (userId) {
+      await db.insert(aiInteractions).values({
+        userId,
+        type: 'goal_planning',
+        input: { title, description },
+        output: result,
+        metadata: {},
+      })
+    }
+
+    res.json({ success: true, data: result })
+  } catch (error: any) {
+    console.error('plan-goal error', error)
+    res.status(500).json({ success: false, message: 'AI goal planning failed' })
+  }
+})
 
 export default router; 

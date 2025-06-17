@@ -1,6 +1,6 @@
 import { Router } from 'express';
 import { Request, Response, NextFunction } from 'express';
-import { db, users } from '@todoai/database'
+import { db, users, refreshTokens } from '@todoai/database'
 import { eq } from 'drizzle-orm'
 import { signAccessToken, signRefreshToken, hashPassword, verifyPassword, authService, verifyAccessToken } from '@todoai/auth'
 
@@ -52,6 +52,14 @@ router.post('/login', async (req: Request, res: Response, next: NextFunction) =>
 
     const accessToken = signAccessToken({ userId: user.id, email: user.email })
     const refreshToken = signRefreshToken(user.id)
+
+    // Persist refresh token (30 days expiry)
+    const expiry = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000)
+    await db.insert(refreshTokens).values({
+      userId: user.id,
+      token: refreshToken,
+      expiresAt: expiry,
+    })
 
     // Update last login timestamp
     await db.update(users).set({ lastLoginAt: new Date() }).where(eq(users.id, user.id))
@@ -167,11 +175,15 @@ router.post('/register', async (req: Request, res: Response, next: NextFunction)
  */
 router.post('/logout', async (req: Request, res: Response, next: NextFunction) => {
   try {
-    // TODO: Implement logout logic
-    res.json({ 
-      success: true, 
-      message: 'Logout successful' 
-    });
+    const { refreshToken } = req.body as { refreshToken?: string }
+    if (!refreshToken) {
+      return res.status(400).json({ success: false, message: 'refreshToken is required' })
+    }
+
+    // Revoke token in DB
+    await db.update(refreshTokens).set({ isRevoked: true }).where(eq(refreshTokens.token, refreshToken))
+
+    res.json({ success: true, message: 'Logout successful' })
   } catch (error: unknown) {
     next(error as Error)
   }
@@ -215,13 +227,29 @@ router.post('/refresh', async (req: Request, res: Response, next: NextFunction) 
       return res.status(401).json({ success: false, message: 'Invalid refresh token' })
     }
 
+    // Validate token exists and not revoked / expired
+    const [stored] = await db.select().from(refreshTokens).where(eq(refreshTokens.token, refreshToken))
+    if (!stored || stored.isRevoked || new Date(stored.expiresAt) < new Date()) {
+      return res.status(401).json({ success: false, message: 'Refresh token invalid or expired' })
+    }
+
     const [user] = await db.select().from(users).where(eq(users.id, decoded.userId))
     if (!user) {
       return res.status(404).json({ success: false, message: 'User not found' })
     }
 
+    // Revoke old token
+    await db.update(refreshTokens).set({ isRevoked: true }).where(eq(refreshTokens.token, refreshToken))
+
     const newAccessToken = signAccessToken({ userId: user.id, email: user.email })
     const newRefreshToken = signRefreshToken(user.id)
+
+    // Store new refresh token
+    await db.insert(refreshTokens).values({
+      userId: user.id,
+      token: newRefreshToken,
+      expiresAt: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
+    })
 
     res.json({
       success: true,

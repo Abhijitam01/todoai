@@ -1,5 +1,7 @@
 import { Router } from 'express';
 import { Request, Response, NextFunction } from 'express';
+import { db, goals } from '@todoai/database';
+import { and, eq } from 'drizzle-orm';
 
 const router = Router();
 
@@ -197,10 +199,98 @@ router.put('/:id', async (req: Request, res: Response, next: NextFunction) => {
  */
 router.delete('/:id', async (req: Request, res: Response, next: NextFunction) => {
   try {
-    // TODO: Implement delete goal logic
-    res.json({ 
-      success: true, 
-      message: 'Goal deleted successfully'
+    const userId = (req as any).user?.id;
+    if (!userId) {
+      return res.status(401).json({ success: false, message: 'Unauthorized' });
+    }
+    const { id } = req.params;
+    if (!id) {
+      return res.status(400).json({ success: false, message: 'Goal ID is required' });
+    }
+    const [goal] = await db.select().from(goals).where(and(eq(goals.id, id), eq(goals.userId, userId), eq(goals.isArchived, false)));
+    if (!goal) {
+      return res.status(404).json({ success: false, message: 'Goal not found' });
+    }
+    await db.update(goals).set({ isArchived: true, updatedAt: new Date() }).where(and(eq(goals.id, id), eq(goals.userId, userId)));
+    // TODO: Cascade archive all tasks for this goal (stub)
+    const [archivedGoal] = await db.select().from(goals).where(and(eq(goals.id, id), eq(goals.userId, userId)));
+    res.json({
+      success: true,
+      message: 'Goal deleted (archived) successfully',
+      data: archivedGoal,
+    });
+  } catch (error) {
+    next(error);
+  }
+});
+
+/**
+ * @swagger
+ * /api/v1/goals/{id}:
+ *   patch:
+ *     summary: Update a goal
+ *     tags: [Goals]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               title:
+ *                 type: string
+ *               timePerDay:
+ *                 type: string
+ *               targetDate:
+ *                 type: string
+ *               status:
+ *                 type: string
+ *     responses:
+ *       200:
+ *         description: Goal updated successfully
+ *       404:
+ *         description: Goal not found
+ */
+router.patch('/:id', async (req, res, next) => {
+  try {
+    const userId = (req as any).user?.id;
+    if (!userId) {
+      return res.status(401).json({ success: false, message: 'Unauthorized' });
+    }
+    const { id } = req.params;
+    if (!id) {
+      return res.status(400).json({ success: false, message: 'Goal ID is required' });
+    }
+    // Only allow updating certain fields
+    const { title, timePerDay, targetDate, status } = req.body;
+    const [goal] = await db.select().from(goals).where(and(eq(goals.id, id), eq(goals.userId, userId), eq(goals.isArchived, false)));
+    if (!goal) {
+      return res.status(404).json({ success: false, message: 'Goal not found' });
+    }
+    const updateData: any = {};
+    if (title) updateData.title = title;
+    if (timePerDay) updateData.timePerDay = timePerDay;
+    if (targetDate) updateData.targetDate = new Date(targetDate);
+    if (status) updateData.status = status;
+    if (Object.keys(updateData).length === 0) {
+      return res.status(400).json({ success: false, message: 'No valid fields to update' });
+    }
+    updateData.updatedAt = new Date();
+    await db.update(goals).set(updateData).where(and(eq(goals.id, id), eq(goals.userId, userId)));
+    const [updatedGoal] = await db.select().from(goals).where(and(eq(goals.id, id), eq(goals.userId, userId)));
+    // TODO: Trigger plan adaptation/AI if timePerDay or targetDate changed (stub)
+    res.json({
+      success: true,
+      message: 'Goal updated successfully',
+      data: updatedGoal,
     });
   } catch (error) {
     next(error);
