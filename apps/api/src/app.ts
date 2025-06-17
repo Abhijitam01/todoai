@@ -6,6 +6,8 @@ import { createServer } from 'http';
 import { Server } from 'socket.io';
 import jwt from 'jsonwebtoken';
 import dotenv from 'dotenv';
+import prometheusMiddleware from 'express-prometheus-middleware';
+import client from 'prom-client';
 
 // Import routes
 import goalsRouter from './routes/goals';
@@ -61,6 +63,22 @@ app.use(cors({
 
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
+
+// Custom Prometheus metrics
+export const goalsCreatedCounter = new client.Counter({ name: 'goals_created', help: 'Number of goals created' });
+export const tasksCompletedCounter = new client.Counter({ name: 'tasks_completed', help: 'Number of tasks completed' });
+export const aiPlanRevisionsCounter = new client.Counter({ name: 'ai_plan_revisions', help: 'Number of AI plan revisions triggered' });
+export const apiErrorCounter = new client.Counter({ name: 'api_errors', help: 'Number of API errors' });
+
+app.use(prometheusMiddleware({
+  metricsPath: '/metrics',
+  collectDefaultMetrics: true,
+  requestDurationBuckets: [0.1, 0.5, 1, 1.5],
+  authenticate: req => true,
+  extraMasks: [],
+  // Add custom metrics to /metrics endpoint
+  promClient: client,
+}));
 
 // Health check endpoint - legendary status
 app.get('/health', (req, res) => {
@@ -131,6 +149,9 @@ app.use((err: any, req: express.Request, res: express.Response, next: express.Ne
 
   const statusCode = err.statusCode || err.status || 500;
   res.status(statusCode).json(errorResponse);
+
+  // Increment apiErrorCounter
+  apiErrorCounter.inc();
 });
 
 // 404 handler

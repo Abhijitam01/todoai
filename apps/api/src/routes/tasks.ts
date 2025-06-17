@@ -2,7 +2,8 @@ import { Router } from 'express';
 import { Request, Response, NextFunction } from 'express';
 import { db, tasks, eq, and, or } from '@todoai/database';
 import { gte, lte } from 'drizzle-orm';
-
+-import { tasksCompletedCounter } from '../app';
++import { tasksCompletedCounter } from '../metrics';
 const router = Router();
 
 /**
@@ -338,6 +339,7 @@ router.patch('/:id/complete', async (req: Request, res: Response, next: NextFunc
       return res.status(404).json({ success: false, message: 'Task not found' });
     }
     await db.update(tasks).set({ status: 'completed', completedAt: new Date(), updatedAt: new Date() }).where(and(eq(tasks.id, id), eq(tasks.userId, userId)));
+    tasksCompletedCounter.inc();
     const [updatedTask] = await db.select().from(tasks).where(and(eq(tasks.id, id), eq(tasks.userId, userId)));
     // TODO: Trigger plan adaptation if needed (stub)
     res.json({
