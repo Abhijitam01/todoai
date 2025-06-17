@@ -64,7 +64,10 @@ Ensure the plan covers the remaining days and distributes tasks logically.`;
       // Archive old pending/overdue tasks
       const oldTaskIds = [...pendingTasks, ...overdueTasks].map(t => t.id);
       if (oldTaskIds.length > 0) {
-        await db.update(tasks).set({ isArchived: true, updatedAt: new Date() }).where(or(...oldTaskIds.map(id => eq(tasks.id, id))));
+        await db
+          .update(tasks)
+          .set({ isArchived: true, updatedAt: new Date() })
+          .where(inArray(tasks.id, oldTaskIds));
       }
 
       // Calculate dueDate for each new task
