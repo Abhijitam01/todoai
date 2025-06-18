@@ -53,8 +53,12 @@ export class RealtimeService {
           }
 
           const user = userResult[0];
+          if (!user) {
+            socket.emit('auth_error', { message: 'User not found' });
+            return;
+          }
           socket.userId = user.id;
-          socket.userData = user;
+          socket.userData = user as { id: number; email: string; name: string };
 
           // Track connected users
           if (!this.connectedUsers.has(user.id)) {
@@ -116,6 +120,7 @@ export class RealtimeService {
 
           if (result.length > 0) {
             const task = result[0];
+            if (!task) return;
             
             // Broadcast task completion
             this.io.to(`user_${socket.userId}`).emit('task_completed', {
@@ -202,7 +207,9 @@ export class RealtimeService {
       `;
 
       if (stats.length > 0) {
-        const { total_tasks, completed_tasks } = stats[0];
+        if (!stats[0]) return;
+        const total_tasks = stats[0]?.total_tasks ?? 0;
+        const completed_tasks = stats[0]?.completed_tasks ?? 0;
         const progress = total_tasks > 0 ? Math.round((completed_tasks / total_tasks) * 100) : 0;
 
         await sql`
@@ -243,13 +250,14 @@ export class RealtimeService {
       `;
 
       const userStats = stats[0];
+      if (!userStats) return;
 
       socket.emit('user_stats', {
-        totalGoals: parseInt(userStats.total_goals || '0'),
-        completedGoals: parseInt(userStats.completed_goals || '0'),
-        totalTasks: parseInt(userStats.total_tasks || '0'),
-        completedTasks: parseInt(userStats.completed_tasks || '0'),
-        tasksCompletedToday: parseInt(userStats.tasks_today || '0'),
+        totalGoals: parseInt(userStats.total_goals ?? '0'),
+        completedGoals: parseInt(userStats.completed_goals ?? '0'),
+        totalTasks: parseInt(userStats.total_tasks ?? '0'),
+        completedTasks: parseInt(userStats.completed_tasks ?? '0'),
+        tasksCompletedToday: parseInt(userStats.tasks_today ?? '0'),
         timestamp: new Date().toISOString(),
       });
     } catch (error) {
@@ -273,9 +281,10 @@ export class RealtimeService {
       `;
 
       const userStats = stats[0];
-      const totalCompleted = parseInt(userStats.total_completed || '0');
-      const completedToday = parseInt(userStats.completed_today || '0');
-      const completedWeek = parseInt(userStats.completed_week || '0');
+      if (!userStats) return;
+      const totalCompleted = parseInt(userStats.total_completed ?? '0');
+      const completedToday = parseInt(userStats.completed_today ?? '0');
+      const completedWeek = parseInt(userStats.completed_week ?? '0');
 
       // Achievement: First task
       if (totalCompleted === 1) {

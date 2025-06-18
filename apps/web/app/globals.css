@@ -120,4 +120,23 @@
   50% {
     box-shadow: 0 0 20px rgba(239, 68, 68, 0.8), 0 0 30px rgba(239, 68, 68, 0.4);
   }
+}
+
+/* Custom highlight animations for plan adaptation */
+@keyframes highlight-new {
+  0% { background-color: rgba(45, 212, 191, 0.1); box-shadow: 0 0 12px rgba(45, 212, 191, 0.3); }
+  100% { background-color: transparent; box-shadow: none; }
+}
+
+@keyframes highlight-updated {
+  0% { background-color: rgba(250, 204, 21, 0.1); box-shadow: 0 0 12px rgba(250, 204, 21, 0.3); }
+  100% { background-color: transparent; box-shadow: none; }
+}
+
+.highlight-new {
+  animation: highlight-new 2s ease-out;
+}
+
+.highlight-updated {
+  animation: highlight-updated 2s ease-out;
 } 

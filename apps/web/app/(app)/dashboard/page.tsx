@@ -30,6 +30,10 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Task } from "@/lib/stores/taskStore";
+import { ProgressBar } from '@/components/dashboard/GoalProgress';
+import { TodayTasks } from '@/components/dashboard/TodayTasks';
+import { AddTask } from '@/components/dashboard/AddTask';
+import { useTasksToday } from '@/lib/hooks/useTasksToday';
 
 // Loading skeleton components
 const TaskSkeleton = () => (
@@ -263,227 +267,41 @@ export default function DashboardPage() {
     return "Good evening";
   };
 
+  // Fetch today's tasks (replace with real hook)
+  const { data: tasks, loading: tasksLoading, error } = useTasksToday();
+
   if (isLoading) {
     return <DashboardSkeleton />;
   }
 
   return (
-    <div className="space-y-8">
-      {/* Header Section */}
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.6 }}
-        className="flex flex-col md:flex-row md:items-center justify-between gap-4"
-      >
-        <div>
-          <h1 className="text-4xl font-bold text-white flex items-center gap-3">
-            <span className="text-2xl">👋</span>
-            {getTimeOfDayGreeting()}, John
-          </h1>
-          <p className="text-gray-400 mt-2 text-lg">
-            {currentTime.toLocaleDateString('en-US', { 
-              weekday: 'long', 
-              year: 'numeric', 
-              month: 'long', 
-              day: 'numeric' 
-            })}
-          </p>
-          <div className="flex items-center gap-4 mt-4">
-            <Badge variant="secondary" className="bg-green-500/10 text-green-400 border-green-500/20">
-              <Circle className="w-2 h-2 fill-current mr-2" />
-              {completedTasks.length} completed today
-            </Badge>
-            <Badge variant="secondary" className="bg-blue-500/10 text-blue-400 border-blue-500/20">
-              <Target className="w-3 h-3 mr-2" />
-              {pendingTasks.length} remaining
-            </Badge>
-            <Badge variant="secondary" className="bg-purple-500/10 text-purple-400 border-purple-500/20">
-              <Sparkles className="w-3 h-3 mr-2" />
-              <a href="/enhanced-tasks" className="hover:underline">
-                Try Enhanced Tasks
-              </a>
-            </Badge>
+    <div className="max-w-3xl mx-auto w-full flex flex-col gap-8 py-8">
+      {/* Progress Bar with milestones */}
+      <ProgressBar />
+
+      {/* Motivational Section */}
+      <DailyMotivation />
+
+      {/* Today's Tasks List */}
+      <section>
+        <h2 className="text-2xl font-bold mb-4">Today's Tasks</h2>
+        {tasksLoading ? (
+          <div className="space-y-4">
+            {[...Array(3)].map((_, i) => <Skeleton key={i} className="h-16 w-full rounded-lg bg-gray-800" />)}
           </div>
-        </div>
-        
-        <div className="flex items-center gap-3">
-          <QuickActions />
-          <Button 
-            variant="outline" 
-            className="border-gray-700 bg-gray-800/50 hover:bg-gray-700 text-gray-300"
-          >
-            <MoreHorizontal className="w-4 h-4" />
-          </Button>
-        </div>
-      </motion.div>
-
-      {/* Analytics Cards */}
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.6, delay: 0.1 }}
-      >
-        <AnalyticsCards {...analyticsData} />
-      </motion.div>
-
-      {/* Daily Motivation */}
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.6, delay: 0.2 }}
-      >
-        <DailyMotivation />
-      </motion.div>
-
-      {/* Goals Progress */}
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.6, delay: 0.3 }}
-      >
-        <GoalProgress goals={mockGoals} />
-      </motion.div>
-
-      {/* Today's Tasks */}
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.6, delay: 0.4 }}
-        className="space-y-6"
-      >
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <h2 className="text-2xl font-bold text-white flex items-center gap-2">
-              <CheckCircle2 className="w-6 h-6 text-blue-400" />
-              Today's Focus
-            </h2>
-            <Badge variant="secondary" className="bg-gray-800 text-gray-300">
-              {todaysTasks.length} tasks
-            </Badge>
-          </div>
-          <div className="flex items-center gap-2">
-            <Button variant="ghost" size="sm" className="text-gray-400 hover:text-white">
-              <Filter className="w-4 h-4 mr-2" />
-              Filter
-            </Button>
-            <Button variant="ghost" size="sm" className="text-gray-400 hover:text-white">
-              <SortAsc className="w-4 h-4 mr-2" />
-              Sort
-            </Button>
-          </div>
-        </div>
-
-        {todaysTasks.length === 0 ? (
-          <EmptyState
-            icon="🎉"
-            title="You've crushed all your tasks today!"
-            description="Take a break — or plan tomorrow's step."
-            action={{
-              label: "Plan Tomorrow",
-              href: "/create-goal"
-            }}
-            className="py-16"
-          />
+        ) : error ? (
+          <div className="text-red-500">Failed to load tasks.</div>
         ) : (
-          /* Task Lists */
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-            {/* Pending Tasks */}
-            <div className="space-y-4">
-              <div className="flex items-center gap-2">
-                <h3 className="text-lg font-semibold text-white">Up Next</h3>
-                <Badge variant="secondary" className="bg-orange-500/10 text-orange-400 border-orange-500/20">
-                  <Flame className="w-3 h-3 mr-1" />
-                  {pendingTasks.length}
-                </Badge>
-              </div>
-              <div className="space-y-3">
-                {pendingTasks.length === 0 ? (
-                  <Card className="bg-gray-900/50 border-gray-700/50">
-                    <CardContent className="p-8 text-center">
-                      <CheckCircle2 className="w-12 h-12 text-green-400 mx-auto mb-4" />
-                      <p className="text-gray-400">All tasks completed! 🎉</p>
-                    </CardContent>
-                  </Card>
-                ) : (
-                  pendingTasks.map((task, index) => (
-                    <motion.div
-                      key={task.id}
-                      initial={{ opacity: 0, x: -20 }}
-                      animate={{ opacity: 1, x: 0 }}
-                      transition={{ duration: 0.3, delay: index * 0.1 }}
-                    >
-                      <TaskCard task={task} />
-                    </motion.div>
-                  ))
-                )}
-              </div>
-            </div>
-
-            {/* Completed Tasks */}
-            <div className="space-y-4">
-              <div className="flex items-center gap-2">
-                <h3 className="text-lg font-semibold text-white">Completed</h3>
-                <Badge variant="secondary" className="bg-green-500/10 text-green-400 border-green-500/20">
-                  <Star className="w-3 h-3 mr-1" />
-                  {completedTasks.length}
-                </Badge>
-              </div>
-              <div className="space-y-3">
-                {completedTasks.length === 0 ? (
-                  <Card className="bg-gray-900/50 border-gray-700/50">
-                    <CardContent className="p-8 text-center">
-                      <Target className="w-12 h-12 text-gray-400 mx-auto mb-4" />
-                      <p className="text-gray-400">No completed tasks yet</p>
-                    </CardContent>
-                  </Card>
-                ) : (
-                  completedTasks.map((task, index) => (
-                    <motion.div
-                      key={task.id}
-                      initial={{ opacity: 0, x: 20 }}
-                      animate={{ opacity: 1, x: 0 }}
-                      transition={{ duration: 0.3, delay: index * 0.1 }}
-                    >
-                      <TaskCard task={task} />
-                    </motion.div>
-                  ))
-                )}
-              </div>
-            </div>
-          </div>
+          <TodayTasks tasks={tasks ?? []} />
         )}
+      </section>
 
-        {/* Quick Stats */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.6, delay: 0.5 }}
-        >
-          <Card className="bg-gray-900/30 border-gray-700/50">
-            <CardContent className="p-6">
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
-                <div className="text-center">
-                  <div className="text-2xl font-bold text-white">{analyticsData.completionRate}%</div>
-                  <div className="text-sm text-gray-400">Completion Rate</div>
-                </div>
-                <div className="text-center">
-                  <div className="text-2xl font-bold text-white">{Math.round(analyticsData.timeRemaining)}</div>
-                  <div className="text-sm text-gray-400">Hours Remaining</div>
-                </div>
-                <div className="text-center">
-                  <div className="text-2xl font-bold text-white">{mockGoals.length}</div>
-                  <div className="text-sm text-gray-400">Active Goals</div>
-                </div>
-                <div className="text-center">
-                  <div className="text-2xl font-bold text-white">4</div>
-                  <div className="text-sm text-gray-400">Day Streak</div>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        </motion.div>
-      </motion.div>
+      {/* Add Task Button (floating/fixed) */}
+      <div className="fixed bottom-8 right-8 z-50">
+        <AddTask />
+      </div>
+
+      {/* TODO: Add microinteractions (confetti on complete, shimmer on AI, etc.) */}
     </div>
   );
 } 

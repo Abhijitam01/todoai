@@ -11,6 +11,7 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Form, FormField, FormItem, FormLabel, FormControl, FormMessage } from "@/components/ui/form";
 import { useToast } from "@/components/ui/toast";
+import { useAuthStore } from "@/lib/store/auth";
 
 const loginSchema = z.object({
   email: z.string().email("Invalid email address"),
@@ -22,6 +23,8 @@ type LoginFormValues = z.infer<typeof loginSchema>;
 export default function LoginPage() {
   const router = useRouter();
   const { addToast } = useToast();
+  const { setAuth } = useAuthStore();
+
   const form = useForm<LoginFormValues>({
     resolver: zodResolver(loginSchema),
     defaultValues: {
@@ -32,22 +35,23 @@ export default function LoginPage() {
 
   const onSubmit = async (values: LoginFormValues) => {
     try {
-      // TODO: Replace mock with real API call
       const res = await api.post('/auth/login', {
         email: values.email,
         password: values.password,
       });
-      
-      // Handle successful login
-      console.log("Login successful:", res.data);
-      
-      // TODO: Update auth store with token and redirect
-      // useAuthStore.getState().login(res.data.token, res.data.user);
-      // router.push('/dashboard');
-      
+
+      const { user, tokens } = res.data.data;
+
+      setAuth(user, tokens.accessToken, tokens.refreshToken);
+
+      router.push('/');
     } catch (err: any) {
       console.error("Login failed:", err);
-      // Handle login error
+      addToast({
+        title: "Login failed",
+        description: err?.response?.data?.message || "Invalid credentials",
+        type: "error",
+      });
     }
   };
 

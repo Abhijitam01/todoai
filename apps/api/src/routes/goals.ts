@@ -217,13 +217,13 @@ router.delete('/:id', async (req: Request, res: Response, next: NextFunction) =>
     await db.update(goals).set({ isArchived: true, updatedAt: new Date() }).where(and(eq(goals.id, id), eq(goals.userId, userId)));
     // TODO: Cascade archive all tasks for this goal (stub)
     const [archivedGoal] = await db.select().from(goals).where(and(eq(goals.id, id), eq(goals.userId, userId)));
-    res.json({
+    return res.json({
       success: true,
       message: 'Goal deleted (archived) successfully',
       data: archivedGoal,
     });
   } catch (error) {
-    next(error);
+    return next(error);
   }
 });
 
@@ -290,13 +290,13 @@ router.patch('/:id', async (req, res, next) => {
     await db.update(goals).set(updateData).where(and(eq(goals.id, id), eq(goals.userId, userId)));
     const [updatedGoal] = await db.select().from(goals).where(and(eq(goals.id, id), eq(goals.userId, userId)));
     // TODO: Trigger plan adaptation/AI if timePerDay or targetDate changed (stub)
-    res.json({
+    return res.json({
       success: true,
       message: 'Goal updated successfully',
       data: updatedGoal,
     });
   } catch (error) {
-    next(error);
+    return next(error);
   }
 });
 
@@ -340,15 +340,15 @@ router.post('/:id/revise', async (req: Request, res: Response, next: NextFunctio
       name: goal.title,
       duration_days: 90, // TODO: Replace with actual duration if available
       time_per_day_hours: 1, // TODO: Replace with actual value if available
-      skill_level: 'beginner', // TODO: Replace with actual value if available
+      skill_level: 'beginner' as const, // TODO: Replace with actual value if available
     });
     aiPlanRevisionsCounter.inc();
-    res.status(202).json({
+    return res.status(202).json({
       success: true,
       message: 'Plan revision queued. AI will update your plan soon.',
     });
   } catch (error) {
-    next(error);
+    return next(error);
   }
 });
 

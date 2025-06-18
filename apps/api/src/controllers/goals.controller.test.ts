@@ -5,7 +5,7 @@ import request from 'supertest';
 import express from 'express';
 import bodyParser from 'body-parser';
 import { createGoal, getGoalStatus } from './goals.controller';
-import { PrismaClient } from '../src/generated/prisma';
+import { db, goals, users, eq } from '@todoai/database';
 import { goalQueue } from '../queues/goal.queue';
 
 // Mock OpenAI service
@@ -40,69 +40,81 @@ jest.mock('../queues/goal.queue', () => ({
   },
 }));
 
-// Mock Prisma
-jest.mock('../src/generated/prisma', () => ({
-  PrismaClient: jest.fn().mockImplementation(() => ({
-    goal: {
-      create: jest.fn().mockResolvedValue({
-        id: 'test-goal-id',
-        name: 'Test Goal',
-        status: 'PLANNING',
-      }),
-      findFirst: jest.fn().mockResolvedValue({
-        id: 'test-goal-id',
-        name: 'Test Goal',
-        status: 'PLANNING',
-        progress_percentage: 0,
-        milestones: [],
-      }),
-      findUnique: jest.fn().mockResolvedValue({
-        start_date: new Date('2024-01-01T00:00:00.000Z'),
-      }),
-      deleteMany: jest.fn().mockResolvedValue({ count: 0 }),
+// Mock Drizzle database operations
+jest.mock('@todoai/database', () => {
+  const mockDb = {
+    insert: jest.fn().mockReturnValue({
+      values: jest.fn().mockReturnValue({
+        returning: jest.fn().mockResolvedValue([{
+          id: 'test-goal-id',
+          title: 'Test Goal',
+          status: 'PLANNING',
+          userId: 'test-user-id',
+        }])
+      })
+    }),
+    query: {
+      goals: {
+        findFirst: jest.fn().mockResolvedValue({
+          id: 'test-goal-id',
+          title: 'Test Goal',
+          status: 'PLANNING',
+          progress: 0,
+          userId: 'test-user-id',
+        })
+      }
     },
-    user: {
-      create: jest.fn().mockResolvedValue({
-        id: 'test-user-id',
-        name: 'Test User',
-        email: 'test@example.com',
-      }),
-      delete: jest.fn().mockResolvedValue({
-        id: 'test-user-id',
-      }),
-    },
-    $disconnect: jest.fn().mockResolvedValue(undefined),
-  })),
-}));
+    delete: jest.fn().mockReturnValue({
+      where: jest.fn().mockResolvedValue({ count: 1 })
+    })
+  };
+  
+  return {
+    db: mockDb,
+    goals: { id: 'goals-table' },
+    users: { id: 'users-table' },
+    eq: jest.fn()
+  };
+});
 
 // Async handler for Express
 function asyncHandler(fn: any) {
   return (req: any, res: any, next: any) => Promise.resolve(fn(req, res, next)).catch(next);
 }
 
-const prisma = new PrismaClient();
+// Test user data
+let testUser: any;
+let testGoal: any;
 
 beforeAll(async () => {
-  await prisma.user.create({
-    data: {
-      id: 'test-user-id',
-      name: 'Test User',
-      email: 'test@example.com',
-      password: 'hashedpassword',
-    },
-  });
+  testUser = {
+    id: 'test-user-id',
+    email: 'test@example.com',
+    firstName: 'Test',
+    lastName: 'User',
+  };
+  
+  testGoal = {
+    id: 'test-goal-id',
+    title: 'Test Goal',
+    status: 'PLANNING',
+    userId: 'test-user-id',
+  };
 });
 
 afterAll(async () => {
-  await prisma.goal.deleteMany({ where: { userId: 'test-user-id' } });
-  await prisma.user.delete({ where: { id: 'test-user-id' } });
-  await prisma.$disconnect();
+  // Cleanup is handled by mocks
+  jest.clearAllMocks();
 });
 
 const app = express();
 app.use(bodyParser.json());
 app.use((req, res, next) => {
-  req.user = { id: 'test-user-id' };
+  req.user = { 
+    id: 'test-user-id', 
+    email: 'test@example.com', 
+    role: 'user' 
+  };
   next();
 });
 app.post('/goals', createGoal);
@@ -176,19 +188,17 @@ describe('Goals Controller', () => {
       const testApp = express();
       testApp.use(bodyParser.json());
       testApp.use((req, res, next) => {
-        req.user = { id: 'test-user-id' };
+        req.user = { 
+          id: 'test-user-id', 
+          email: 'test@example.com', 
+          role: 'user' 
+        };
         next();
       });
       
       // Mock the controller with null return
       const mockGoalController = jest.fn().mockImplementation(async (req: any, res: any) => {
-        const mockPrisma = {
-          goal: {
-            findFirst: jest.fn().mockResolvedValue(null)
-          }
-        };
-        
-        const goal = await mockPrisma.goal.findFirst();
+        const goal = null; // Simulate goal not found
         if (!goal) {
           res.status(404).json({ error: 'Goal not found', code: 404 });
           return;

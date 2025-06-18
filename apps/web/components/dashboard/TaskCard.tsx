@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -40,6 +40,8 @@ export function TaskCard({
   const [isCompleting, setIsCompleting] = useState(false);
   const [showSnoozeDialog, setShowSnoozeDialog] = useState(false);
   const [showRescheduleDialog, setShowRescheduleDialog] = useState(false);
+  const [isNew, setIsNew] = useState(false);
+  const [isUpdated, setIsUpdated] = useState(false);
 
   // Zustand store actions
   const completeTask = useTaskStore(state => state.completeTask);
@@ -47,6 +49,10 @@ export function TaskCard({
   const canRedo = useTaskStore(state => state.canRedo);
   const undo = useTaskStore(state => state.undo);
   const redo = useTaskStore(state => state.redo);
+  const { recentlyCreatedTaskIds, recentlyUpdatedTaskIds } = useTaskStore(state => ({
+    recentlyCreatedTaskIds: state.recentlyCreatedTaskIds,
+    recentlyUpdatedTaskIds: state.recentlyUpdatedTaskIds,
+  }));
   
   // Toast notifications
   const toasts = useTaskToasts();
@@ -69,6 +75,20 @@ export function TaskCard({
       onSelect(task.id, !isSelected);
     }
   };
+
+  useEffect(() => {
+    const wasCreated = recentlyCreatedTaskIds.has(task.id);
+    const wasUpdated = recentlyUpdatedTaskIds.has(task.id);
+    if (wasCreated) {
+      setIsNew(true);
+      // Remove highlight after animation
+      setTimeout(() => setIsNew(false), 2000);
+    }
+    if (wasUpdated) {
+      setIsUpdated(true);
+      setTimeout(() => setIsUpdated(false), 2000);
+    }
+  }, [recentlyCreatedTaskIds, recentlyUpdatedTaskIds, task.id]);
 
   const getPriorityColor = (priority: string) => {
     switch (priority) {
@@ -146,7 +166,9 @@ export function TaskCard({
         className={cn(
           "group relative",
           task.completed && "opacity-60",
-          isSelected && "ring-2 ring-blue-500/50"
+          isSelected && "ring-2 ring-blue-500/50",
+          isNew && "highlight-new",
+          isUpdated && "highlight-updated"
         )}
       >
         <div className={cn(

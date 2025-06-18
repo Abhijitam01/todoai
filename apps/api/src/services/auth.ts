@@ -1,7 +1,7 @@
 import jwt from 'jsonwebtoken';
 import bcrypt from 'bcryptjs';
 import { eq } from 'drizzle-orm';
-import { db, users, type User } from '@todoai/database';
+import { db, users } from '@todoai/database';
 
 // Types
 export interface TokenPayload {
@@ -12,7 +12,7 @@ export interface TokenPayload {
 }
 
 export interface AuthResponse {
-  user: Omit<User, 'password'>;
+  user: { id: string; name: string; email: string } | any;
   accessToken: string;
   refreshToken: string;
 }
@@ -47,8 +47,8 @@ export class AuthService {
 
   // Generate JWT tokens
   static generateTokens(payload: TokenPayload): { accessToken: string; refreshToken: string } {
-    const accessToken = jwt.sign(payload, JWT_SECRET, { expiresIn: JWT_EXPIRES_IN });
-    const refreshToken = jwt.sign(payload, JWT_SECRET, { expiresIn: JWT_REFRESH_EXPIRES_IN });
+    const accessToken = jwt.sign(payload, JWT_SECRET as string, { expiresIn: JWT_EXPIRES_IN as string } as any);
+    const refreshToken = jwt.sign(payload, JWT_SECRET as string, { expiresIn: JWT_REFRESH_EXPIRES_IN as string } as any);
     
     return { accessToken, refreshToken };
   }
@@ -85,11 +85,12 @@ export class AuthService {
         .values({
           email: data.email,
           password: hashedPassword,
-          name: data.name,
-          createdAt: new Date(),
-          updatedAt: new Date(),
         })
         .returning();
+
+      if (!newUser) {
+        throw new Error('User creation failed');
+      }
 
       // Generate tokens
       const tokenPayload: TokenPayload = {
@@ -158,7 +159,7 @@ export class AuthService {
   }
 
   // Get user by ID
-  static async getUserById(userId: string): Promise<Omit<User, 'password'> | null> {
+  static async getUserById(userId: string): Promise<{ id: string; name: string; email: string } | any | null> {
     try {
       const [user] = await db
         .select()
@@ -211,8 +212,8 @@ export class AuthService {
   // Update user profile
   static async updateProfile(
     userId: string, 
-    data: Partial<Pick<User, 'name' | 'email'>>
-  ): Promise<Omit<User, 'password'>> {
+    data: { name: string; email: string } | any
+  ): Promise<{ id: string; name: string; email: string } | any> {
     try {
       // If email is being updated, check it's not taken
       if (data.email) {
@@ -222,7 +223,7 @@ export class AuthService {
           .where(eq(users.email, data.email))
           .limit(1);
 
-        if (existingUser.length > 0 && existingUser[0].id !== userId) {
+        if (existingUser && existingUser.length > 0 && existingUser[0] && existingUser[0].id !== userId) {
           throw new Error('Email already taken');
         }
       }

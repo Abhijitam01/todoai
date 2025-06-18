@@ -6,7 +6,10 @@ import { createServer } from 'http';
 import { Server } from 'socket.io';
 import jwt from 'jsonwebtoken';
 import dotenv from 'dotenv';
+
+// @ts-ignore
 import prometheusMiddleware from 'express-prometheus-middleware';
+// @ts-ignore
 import client from 'prom-client';
 
 // Import routes
@@ -22,7 +25,7 @@ import docsRouter from './routes/docs';
 // Import middleware
 import { errorHandler } from './middleware/errorHandler';
 import { authMiddleware } from './middleware/auth';
-import RealtimeService, { initializeRealTimeService } from './services/realtime';
+import { RealtimeService, initializeRealTimeService } from './services/realtime';
 
 // Load environment variables
 dotenv.config();
@@ -74,7 +77,7 @@ app.use(prometheusMiddleware({
   metricsPath: '/metrics',
   collectDefaultMetrics: true,
   requestDurationBuckets: [0.1, 0.5, 1, 1.5],
-  authenticate: req => true,
+  authenticate: (req: express.Request) => true,
   extraMasks: [],
   // Add custom metrics to /metrics endpoint
   metricsApp: client.register,
@@ -131,7 +134,7 @@ app.get('/', (req, res) => {
 });
 
 // Initialize legendary real-time service
-initializeRealTimeService(io);
+export const realtimeService = initializeRealTimeService(io);
 
 // Legendary error handling
 app.use((err: any, req: express.Request, res: express.Response, next: express.NextFunction) => {

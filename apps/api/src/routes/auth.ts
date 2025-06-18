@@ -64,7 +64,7 @@ router.post('/login', async (req: Request, res: Response, next: NextFunction) =>
     // Update last login timestamp
     await db.update(users).set({ lastLoginAt: new Date() }).where(eq(users.id, user.id))
 
-    res.json({
+    return res.json({
       success: true,
       message: 'Login successful',
       data: {
@@ -77,7 +77,7 @@ router.post('/login', async (req: Request, res: Response, next: NextFunction) =>
       },
     })
   } catch (error: unknown) {
-    next(error as Error)
+    return next(error as Error)
   }
 });
 
@@ -144,7 +144,7 @@ router.post('/register', async (req: Request, res: Response, next: NextFunction)
     const accessToken = signAccessToken({ userId: createdUser.id, email: createdUser.email })
     const refreshToken = signRefreshToken(createdUser.id)
 
-    res.status(201).json({
+    return res.status(201).json({
       success: true,
       message: 'Registration successful',
       data: {
@@ -157,7 +157,7 @@ router.post('/register', async (req: Request, res: Response, next: NextFunction)
       },
     })
   } catch (error: unknown) {
-    next(error as Error)
+    return next(error as Error)
   }
 });
 
@@ -183,9 +183,9 @@ router.post('/logout', async (req: Request, res: Response, next: NextFunction) =
     // Revoke token in DB
     await db.update(refreshTokens).set({ isRevoked: true }).where(eq(refreshTokens.token, refreshToken))
 
-    res.json({ success: true, message: 'Logout successful' })
+    return res.json({ success: true, message: 'Logout successful' })
   } catch (error: unknown) {
-    next(error as Error)
+    return next(error as Error)
   }
 });
 
@@ -251,7 +251,7 @@ router.post('/refresh', async (req: Request, res: Response, next: NextFunction) 
       expiresAt: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
     })
 
-    res.json({
+    return res.json({
       success: true,
       data: {
         tokens: {
@@ -262,7 +262,7 @@ router.post('/refresh', async (req: Request, res: Response, next: NextFunction) 
       },
     })
   } catch (error: unknown) {
-    next(error as Error)
+    return next(error as Error)
   }
 })
 

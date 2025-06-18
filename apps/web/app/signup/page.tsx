@@ -12,6 +12,7 @@ import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { Form, FormField, FormItem, FormLabel, FormControl, FormMessage } from "@/components/ui/form";
 import { useToast } from "@/components/ui/toast";
+import { useAuthStore } from "@/lib/store/auth";
 
 const signupSchema = z.object({
   name: z.string().min(2, "Name is required"),
@@ -28,6 +29,8 @@ type SignupFormValues = z.infer<typeof signupSchema>;
 export default function SignupPage() {
   const router = useRouter();
   const { addToast } = useToast();
+  const { setAuth } = useAuthStore();
+
   const form = useForm<SignupFormValues>({
     resolver: zodResolver(signupSchema),
     defaultValues: {
@@ -40,19 +43,22 @@ export default function SignupPage() {
 
   const onSubmit = async (values: SignupFormValues) => {
     try {
-      // TODO: Replace mock with real API call
-      await api.post('/auth/signup', {
+      const res = await api.post('/auth/register', {
         name: values.name,
         email: values.email,
         password: values.password,
       });
-      
+
+      const { user, tokens } = res.data.data;
+
+      setAuth(user, tokens.accessToken, tokens.refreshToken);
+
       addToast({
         title: "Account created!",
         description: "Welcome to TodoAI.",
         type: "success",
       });
-      router.push("/login");
+      router.push('/');
     } catch (err: any) {
       addToast({
         title: "Signup failed",

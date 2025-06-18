@@ -34,6 +34,8 @@ interface TaskStore {
   history: TaskAction[];
   historyIndex: number;
   isLoading: boolean;
+  recentlyCreatedTaskIds: Set<string>;
+  recentlyUpdatedTaskIds: Set<string>;
   
   // Actions
   addTask: (task: Omit<Task, 'id' | 'createdAt' | 'updatedAt'>) => void;
@@ -61,6 +63,7 @@ interface TaskStore {
   getTasksByPriority: (priority: Task['priority']) => Task[];
   clearHistory: () => void;
   setLoading: (loading: boolean) => void;
+  setAdaptedTasks: (data: { createdIds: string[], updatedIds: string[] }) => void;
 }
 
 const generateId = () => Math.random().toString(36).substring(2, 15);
@@ -72,6 +75,8 @@ const useTaskStore = create<TaskStore>()(
     history: [],
     historyIndex: -1,
     isLoading: false,
+    recentlyCreatedTaskIds: new Set(),
+    recentlyUpdatedTaskIds: new Set(),
 
     // Helper function to create action
     createAction: (
@@ -301,6 +306,21 @@ const useTaskStore = create<TaskStore>()(
 
     setLoading: (loading) => {
       set({ isLoading: loading });
+    },
+
+    setAdaptedTasks: ({ createdIds, updatedIds }) => {
+      set({
+        recentlyCreatedTaskIds: new Set(createdIds),
+        recentlyUpdatedTaskIds: new Set(updatedIds),
+      });
+
+      // Clear the highlights after a delay to ensure they are temporary
+      setTimeout(() => {
+        set({
+          recentlyCreatedTaskIds: new Set(),
+          recentlyUpdatedTaskIds: new Set(),
+        });
+      }, 5000); // Highlight for 5 seconds
     },
   }))
 );

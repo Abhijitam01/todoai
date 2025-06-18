@@ -13,6 +13,7 @@ import {
   TrendingUp
 } from "lucide-react";
 import { useRouter } from "next/navigation";
+import { useGoals } from '@/lib/hooks/useGoals';
 
 interface Goal {
   id: string;
@@ -24,6 +25,79 @@ interface Goal {
 
 interface GoalProgressProps {
   goals: Goal[];
+}
+
+export function ProgressBar() {
+  const { data: goals, loading, error } = useGoals();
+  const router = useRouter();
+
+  if (loading) {
+    return <div className="h-8 w-full bg-gray-800 rounded-lg animate-pulse mb-6" />;
+  }
+  if (error) {
+    return <div className="text-red-500 mb-6">Failed to load progress.</div>;
+  }
+  if (!goals || goals.length === 0) {
+    return (
+      <div className="flex flex-col items-center justify-center py-8">
+        <TrendingUp className="w-8 h-8 text-purple-400 mb-2" />
+        <div className="text-lg text-gray-300 mb-2">No active goals yet</div>
+        <Button onClick={() => router.push('/create-goal')} className="bg-purple-500 hover:bg-purple-600 text-white">
+          <Plus className="w-4 h-4 mr-2" /> Create Your First Goal
+        </Button>
+      </div>
+    );
+  }
+
+  // Calculate overall progress (average of all goals)
+  const overallProgress = Math.round(
+    goals.reduce((sum, g) => sum + (g.progress || 0), 0) / goals.length
+  );
+
+  // Show up to 3 top goals (by progress)
+  const topGoals = [...goals].sort((a, b) => b.progress - a.progress).slice(0, 3);
+
+  return (
+    <div className="mb-8">
+      <div className="flex items-center justify-between mb-2">
+        <div className="flex items-center gap-2">
+          <TrendingUp className="w-6 h-6 text-purple-400" />
+          <span className="text-xl font-bold text-white">Progress</span>
+        </div>
+        <span className="text-lg font-semibold text-purple-300">{overallProgress}%</span>
+      </div>
+      <motion.div
+        initial={{ width: 0 }}
+        animate={{ width: `${overallProgress}%` }}
+        transition={{ duration: 0.8 }}
+        className="relative h-4 bg-gray-800 rounded-lg overflow-hidden"
+        style={{ width: '100%' }}
+      >
+        <div
+          className="absolute left-0 top-0 h-4 bg-gradient-to-r from-purple-500 to-blue-500 rounded-lg"
+          style={{ width: `${overallProgress}%` }}
+        />
+      </motion.div>
+      {/* Milestone markers (optional, for demo) */}
+      <div className="flex justify-between text-xs text-gray-500 mt-2">
+        <span>Start</span>
+        <span>25%</span>
+        <span>50%</span>
+        <span>75%</span>
+        <span>Goal!</span>
+      </div>
+      {/* Top goals list */}
+      <div className="mt-4 flex flex-col gap-2">
+        {topGoals.map(goal => (
+          <div key={goal.id} className="flex items-center gap-3">
+            <div className="w-2 h-2 rounded-full bg-purple-400" />
+            <span className="text-white font-medium truncate max-w-xs">{goal.title}</span>
+            <span className="ml-auto text-sm text-gray-400">{goal.progress}%</span>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
 }
 
 export function GoalProgress({ goals }: GoalProgressProps) {

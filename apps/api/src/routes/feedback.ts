@@ -136,16 +136,16 @@ router.post('/', feedbackRateLimit, async (req: Request, res: Response) => {
       timestamp: new Date().toISOString(),
     });
 
-    // Generate insights from the feedback
+    // Generate insights from the feedback - handle undefined values properly
     const insights = generateFeedbackInsights({
       love,
       want: want || '',
       changes: changes || '',
-      rating,
-      recommendation,
+      ...(rating !== undefined && { rating }),
+      ...(recommendation !== undefined && { recommendation }),
     });
 
-    res.status(201).json({
+    return res.status(201).json({
       success: true,
       data: {
         id: feedbackEntry.id,
@@ -214,7 +214,7 @@ router.get('/insights', async (req: Request, res: Response) => {
     const total = parseInt(feedbackInsights.total_feedback || '0');
     const nps = total > 0 ? Math.round(((promoters - detractors) / total) * 100) : 0;
 
-    res.json({
+    return res.json({
       success: true,
       data: {
         overview: {

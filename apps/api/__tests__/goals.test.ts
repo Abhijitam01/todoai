@@ -1,3 +1,5 @@
+import dotenv from 'dotenv';
+dotenv.config({ path: require('path').resolve(__dirname, '../.env') });
 import request from 'supertest';
 import app from '../src/app';
 import { db, goals, users } from '@todoai/database';

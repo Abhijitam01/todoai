@@ -112,6 +112,16 @@ export const aiInteractions = pgTable('ai_interactions', {
   createdAt: timestamp('created_at').defaultNow().notNull(),
 });
 
+// Refresh tokens for JWT
+export const refreshTokens = pgTable('refresh_tokens', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  userId: uuid('user_id').notNull().references(() => users.id, { onDelete: 'cascade' }),
+  token: text('token').notNull().unique(),
+  expiresAt: timestamp('expires_at').notNull(),
+  isRevoked: boolean('is_revoked').default(false),
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+});
+
 // Define relations
 export const usersRelations = relations(users, ({ many, one }) => ({
   goals: many(goals),
@@ -184,6 +194,13 @@ export const aiInteractionsRelations = relations(aiInteractions, ({ one }) => ({
   }),
 }));
 
+export const refreshTokensRelations = relations(refreshTokens, ({ one }) => ({
+  user: one(users, {
+    fields: [refreshTokens.userId],
+    references: [users.id],
+  }),
+}));
+
 // Export all tables for easy access
 export const schema = {
   users,
@@ -193,4 +210,5 @@ export const schema = {
   timeEntries,
   userSettings,
   aiInteractions,
+  refreshTokens,
 }; 

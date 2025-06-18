@@ -5,6 +5,7 @@ import { neon } from '@neondatabase/serverless';
 const router = Router();
 
 // Database connection
+if (!process.env.DATABASE_URL) throw new Error('DATABASE_URL is not set. Please ensure you have a .env file with DATABASE_URL defined, and that dotenv is loaded in your test setup.');
 const sql = neon(process.env.DATABASE_URL!);
 
 // Validation schema
@@ -110,7 +111,7 @@ router.post('/', waitlistRateLimit, async (req: Request, res: Response) => {
       timestamp: new Date().toISOString(),
     });
 
-    res.status(201).json({
+    return res.status(201).json({
       success: true,
       data: {
         id: waitlistEntry.id,
@@ -174,7 +175,7 @@ router.get('/stats', async (req: Request, res: Response) => {
 
     const waitlistStats = stats[0] as any;
 
-    res.json({
+    return res.json({
       success: true,
       data: {
         totalSignups: parseInt(waitlistStats.total_signups || '0'),

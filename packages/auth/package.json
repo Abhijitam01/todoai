@@ -24,6 +24,7 @@
     "@auth/drizzle-adapter": "^0.7.0"
   },
   "devDependencies": {
+    "@todoai/ui": "workspace:^",
     "@types/jsonwebtoken": "^9.0.6",
     "@types/bcryptjs": "^2.4.6",
     "@types/node": "^20.0.0",

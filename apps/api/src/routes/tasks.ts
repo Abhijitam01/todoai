@@ -3,6 +3,7 @@ import { Request, Response, NextFunction } from 'express';
 import { db, tasks, eq, and, or } from '@todoai/database';
 import { gte, lte } from 'drizzle-orm';
 import { tasksCompletedCounter } from '../app';
+import { goalQueueService } from '../queues/goal.queue';
 
 const router = Router();
 
@@ -46,13 +47,13 @@ router.get('/today', async (req: Request, res: Response, next: NextFunction) => 
         )
       );
 
-    res.json({
+    return res.json({
       success: true,
       message: "Today's tasks retrieved successfully",
       data: todayTasks,
     });
   } catch (error) {
-    next(error);
+    return next(error);
   }
 });
 
@@ -104,7 +105,7 @@ router.get('/', async (req: Request, res: Response, next: NextFunction) => {
 
     const allTasks = await db.select().from(tasks).where(and(...filters));
 
-    res.json({
+    return res.json({
       success: true,
       message: 'Tasks retrieved successfully',
       data: allTasks,
@@ -116,7 +117,7 @@ router.get('/', async (req: Request, res: Response, next: NextFunction) => {
       }
     });
   } catch (error) {
-    next(error);
+    return next(error);
   }
 });
 
@@ -153,7 +154,7 @@ router.get('/', async (req: Request, res: Response, next: NextFunction) => {
 router.post('/', async (req: Request, res: Response, next: NextFunction) => {
   try {
     // TODO: Implement create task logic
-    res.status(201).json({ 
+    return res.status(201).json({ 
       success: true, 
       message: 'Task created successfully',
       data: { 
@@ -164,7 +165,7 @@ router.post('/', async (req: Request, res: Response, next: NextFunction) => {
       }
     });
   } catch (error) {
-    next(error);
+    return next(error);
   }
 });
 
@@ -202,13 +203,13 @@ router.get('/:id', async (req: Request, res: Response, next: NextFunction) => {
     if (!task) {
       return res.status(404).json({ success: false, message: 'Task not found' });
     }
-    res.json({
+    return res.json({
       success: true,
       message: 'Task retrieved successfully',
       data: task,
     });
   } catch (error) {
-    next(error);
+    return next(error);
   }
 });
 
@@ -248,7 +249,7 @@ router.get('/:id', async (req: Request, res: Response, next: NextFunction) => {
 router.put('/:id', async (req: Request, res: Response, next: NextFunction) => {
   try {
     // TODO: Implement update task logic
-    res.json({ 
+    return res.json({ 
       success: true, 
       message: 'Task updated successfully',
       data: { 
@@ -258,7 +259,7 @@ router.put('/:id', async (req: Request, res: Response, next: NextFunction) => {
       }
     });
   } catch (error) {
-    next(error);
+    return next(error);
   }
 });
 
@@ -296,13 +297,13 @@ router.delete('/:id', async (req: Request, res: Response, next: NextFunction) =>
     }
     await db.update(tasks).set({ isArchived: true, updatedAt: new Date() }).where(and(eq(tasks.id, id), eq(tasks.userId, userId)));
     const [archivedTask] = await db.select().from(tasks).where(and(eq(tasks.id, id), eq(tasks.userId, userId)));
-    res.json({
+    return res.json({
       success: true,
       message: 'Task deleted (archived) successfully',
       data: archivedTask,
     });
   } catch (error) {
-    next(error);
+    return next(error);
   }
 });
 
@@ -341,14 +342,27 @@ router.patch('/:id/complete', async (req: Request, res: Response, next: NextFunc
     await db.update(tasks).set({ status: 'completed', completedAt: new Date(), updatedAt: new Date() }).where(and(eq(tasks.id, id), eq(tasks.userId, userId)));
     tasksCompletedCounter.inc();
     const [updatedTask] = await db.select().from(tasks).where(and(eq(tasks.id, id), eq(tasks.userId, userId)));
-    // TODO: Trigger plan adaptation if needed (stub)
-    res.json({
+    
+    if (!updatedTask) {
+      // This is unlikely, but good to handle. It means the task disappeared between update and select.
+      return res.status(500).json({ success: false, message: 'Failed to retrieve task after update.' });
+    }
+
+    // Trigger plan adaptation
+    if (updatedTask.goalId) {
+      await goalQueueService.addJob('adapt-plan', {
+        goalId: updatedTask.goalId,
+        trigger: 'task_completed',
+      });
+    }
+
+    return res.json({
       success: true,
       message: 'Task marked as completed',
       data: updatedTask,
     });
   } catch (error) {
-    next(error);
+    return next(error);
   }
 });
 
@@ -415,13 +429,35 @@ router.patch('/:id', async (req: Request, res: Response, next: NextFunction) => 
     updateData.updatedAt = new Date();
     await db.update(tasks).set(updateData).where(and(eq(tasks.id, id), eq(tasks.userId, userId)));
     const [updatedTask] = await db.select().from(tasks).where(and(eq(tasks.id, id), eq(tasks.userId, userId)));
-    res.json({
+
+    if (!updatedTask) {
+      // This is unlikely, but good to handle. It means the task disappeared between update and select.
+      return res.status(500).json({ success: false, message: 'Failed to retrieve task after update.' });
+    }
+
+    // Trigger plan adaptation if status or due date changed
+    if (updatedTask.goalId && (status || dueDate)) {
+      let trigger: 'task_completed' | 'task_rescheduled' | 'task_skipped' = 'task_rescheduled';
+      if (status === 'completed') {
+        trigger = 'task_completed';
+        tasksCompletedCounter.inc(); // Also increment counter here
+      } else if (status === 'skipped') {
+        trigger = 'task_skipped';
+      }
+      
+      await goalQueueService.addJob('adapt-plan', {
+        goalId: updatedTask.goalId,
+        trigger: trigger,
+      });
+    }
+
+    return res.json({
       success: true,
       message: 'Task updated successfully',
       data: updatedTask,
     });
   } catch (error) {
-    next(error);
+    return next(error);
   }
 });
 
