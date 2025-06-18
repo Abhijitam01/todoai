@@ -61,6 +61,9 @@ describe('AI Worker Integration', () => {
     jest.clearAllMocks();
   });
 
+// at the top of apps/api/__tests__/ai-worker.test.ts
+import '../src/queues/goal.worker'; // spin up the worker in-process
+
   it('should enqueue a plan revision job and update tasks', async () => {
     // Mock the job processing with correct GoalJobData structure
     const mockJobData = {
@@ -69,6 +72,7 @@ describe('AI Worker Integration', () => {
       name: goal.title,
       duration_days: 7,
       time_per_day_hours: 1,
+<<<<<<< HEAD
       skill_level: 'BEGINNER'
     };
 
@@ -77,5 +81,16 @@ describe('AI Worker Integration', () => {
     
     expect(result).toHaveProperty('id');
     expect(goalQueue.add).toHaveBeenCalledWith('revise-plan', mockJobData);
+=======
+      skill_level: 'beginner',
+    });
+    // Wait until at least one job on the queue finishes
+    await goalQueue.waitUntilReady();
+    await goalQueue.whenCurrentJobsFinished();
+    // Check that new tasks were created
+    const updatedTasks = await db.select().from(tasks).where(eq(tasks.goalId, goal.id));
+    expect(updatedTasks.length).toBeGreaterThan(0);
+    // Optionally, check for email send attempt (mock/stub in real test)
+>>>>>>> 5902c6537ea3dd13f98a819999edffc8998976a1
   });
 }); 

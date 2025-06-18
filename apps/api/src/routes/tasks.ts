@@ -2,9 +2,14 @@ import { Router } from 'express';
 import { Request, Response, NextFunction } from 'express';
 import { db, tasks, eq, and, or } from '@todoai/database';
 import { gte, lte } from 'drizzle-orm';
+<<<<<<< HEAD
 import { tasksCompletedCounter } from '../app';
 import { goalQueueService } from '../queues/goal.queue';
 
+=======
+-import { tasksCompletedCounter } from '../app';
++import { tasksCompletedCounter } from '../metrics';
+>>>>>>> 5902c6537ea3dd13f98a819999edffc8998976a1
 const router = Router();
 
 /**

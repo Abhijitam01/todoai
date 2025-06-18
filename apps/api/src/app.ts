@@ -80,7 +80,7 @@ app.use(prometheusMiddleware({
   authenticate: (req: express.Request) => true,
   extraMasks: [],
   // Add custom metrics to /metrics endpoint
-  metricsApp: client.register,
+  promClient: client,
 }));
 
 // Health check endpoint - legendary status
