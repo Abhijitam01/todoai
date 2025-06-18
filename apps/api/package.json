@@ -48,10 +48,8 @@
     "zod": "^3.25.56"
   },
   "devDependencies": {
-    "@repo/eslint-config": "*",
-    "@repo/typescript-config": "*",
-    "@todoai/database": "workspace:^",
-    "@todoai/ui": "workspace:^",
+    "@todoai/database": "file:../../packages/database",
+    "@todoai/ui": "file:../../packages/ui",
     "@types/bcryptjs": "^2.4.6",
     "@types/compression": "^1.7.5",
     "@types/cors": "^2.8.17",

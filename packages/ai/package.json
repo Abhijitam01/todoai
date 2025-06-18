@@ -24,7 +24,7 @@
     "@langchain/openai": "^0.0.24"
   },
   "devDependencies": {
-    "@todoai/database": "workspace:^",
+    "@todoai/database": "file:../database",
     "@types/node": "^20.0.0",
     "tsup": "^8.0.0",
     "typescript": "^5.0.0",

@@ -1,445 +1,532 @@
 "use client";
 
-import { motion } from "framer-motion";
-import { useEffect, useState } from "react";
+import { useState, useEffect } from "react";
 import { useParams, useRouter } from "next/navigation";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Progress } from "@/components/ui/progress";
+import { motion, AnimatePresence } from "framer-motion";
 import { 
-  ArrowLeft,
-  Calendar,
-  Target,
-  Clock,
-  Trophy,
-  Tag,
-  Zap,
-  Timer,
-  Edit,
-  Play,
-  Pause,
+  Calendar, 
+  Clock, 
+  Target, 
+  TrendingUp, 
+  Edit3, 
   CheckCircle2,
-  Code,
-  Palette,
-  Dumbbell,
-  Briefcase,
-  Heart,
-  BookOpen,
-  Star,
-  TrendingUp
+  Circle,
+  ArrowLeft,
+  Settings,
+  MoreHorizontal,
+  AlertCircle,
+  Zap,
+  Trophy
 } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Progress } from "@/components/ui/progress";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
+import { PlanPreview, PlanWeek } from "@/components/PlanPreview";
 import { cn } from "@/lib/utils";
-import { useGoalStore, Goal, Task } from "@/lib/stores/goalStore";
+import { useGoal } from "@/lib/hooks/useGoal";
+import { useTasksToday } from "@/lib/hooks/useTasksToday";
 
-// Helper Functions
-const formatDate = (dateString: string) => {
-  return new Date(dateString).toLocaleDateString('en-US', {
-    year: 'numeric',
-    month: 'long',
-    day: 'numeric'
-  });
-};
+interface Task {
+  id: string;
+  title: string;
+  completed: boolean;
+  estimatedTime?: number;
+  actualTime?: number;
+  dueDate: string;
+  week: number;
+  day: number;
+}
 
-const getCategoryIcon = (category: Goal["category"]) => {
-  const icons = {
-    Programming: Code,
-    Design: Palette,
-    Fitness: Dumbbell,
-    Business: Briefcase,
-    Personal: Heart,
-    Learning: BookOpen
-  };
-  return icons[category] || Target;
-};
+interface GoalProgress {
+  totalTasks: number;
+  completedTasks: number;
+  currentWeek: number;
+  totalWeeks: number;
+  onTrack: boolean;
+  daysAhead: number;
+  daysBehind: number;
+}
 
-const getDaysRemaining = (endDate: string) => {
-  const end = new Date(endDate);
-  const today = new Date();
-  const diffTime = end.getTime() - today.getTime();
-  const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-  return diffDays;
-};
-
-const getProgressColor = (progress: number, status: Goal["status"]) => {
-  if (status === "COMPLETED") return "bg-green-500";
-  if (status === "MISSED") return "bg-red-500";
-  if (status === "PAUSED") return "bg-orange-500";
-  if (progress >= 80) return "bg-blue-500";
-  if (progress >= 50) return "bg-yellow-500";
-  return "bg-gray-500";
-};
-
-// Components
-const StatusBadge = ({ status }: { status: Goal["status"] }) => {
-  const variants = {
-    ACTIVE: { color: "bg-green-100 text-green-800", text: "Active" },
-    COMPLETED: { color: "bg-blue-100 text-blue-800", text: "Completed" },
-    PAUSED: { color: "bg-orange-100 text-orange-800", text: "Paused" },
-    MISSED: { color: "bg-red-100 text-red-800", text: "Missed" }
-  };
-
-  const variant = variants[status];
-  
-  return (
-    <span className={cn("inline-flex items-center px-2 py-1 rounded-full text-xs font-medium", variant.color)}>
-      {variant.text}
-    </span>
-  );
-};
-
-const TaskItem = ({ task }: { task: Task }) => {
-  const [isCompleted, setIsCompleted] = useState(task.status === "COMPLETED");
-  
-  const handleToggleComplete = () => {
-    setIsCompleted(!isCompleted);
-    // TODO: Update task status in store
-  };
-
-  return (
-    <div className={cn(
-      "flex items-start gap-3 p-3 rounded-lg border bg-card",
-      isCompleted && "opacity-60"
-    )}>
-      <button
-        onClick={handleToggleComplete}
-        className={cn(
-          "mt-1 w-5 h-5 rounded border-2 flex items-center justify-center transition-colors",
-          isCompleted 
-            ? "bg-green-500 border-green-500 text-white" 
-            : "border-muted-foreground hover:border-primary"
-        )}
-      >
-        {isCompleted && <CheckCircle2 className="h-3 w-3" />}
-      </button>
-      
-      <div className="flex-1 min-w-0">
-        <p className={cn(
-          "font-medium text-sm",
-          isCompleted && "line-through text-muted-foreground"
-        )}>
-          {task.task}
-        </p>
-        {task.description && (
-          <p className="text-xs text-muted-foreground mt-1">{task.description}</p>
-        )}
-        <div className="flex items-center gap-4 mt-2 text-xs text-muted-foreground">
-          {task.estimatedTime && (
-            <span className="flex items-center gap-1">
-              <Timer className="h-3 w-3" />
-              {task.estimatedTime}
-            </span>
-          )}
-          {task.difficulty && (
-            <span className="px-2 py-0.5 bg-secondary text-secondary-foreground rounded text-xs">
-              {task.difficulty}
-            </span>
-          )}
-        </div>
-      </div>
-    </div>
-  );
-};
-
-export default function GoalDetailPage() {
-  const router = useRouter();
+export default function GoalDetailsPage() {
   const params = useParams();
+  const router = useRouter();
   const goalId = params.goalId as string;
   
-  const { goals, dailyTasks, fetchDailyTasks } = useGoalStore();
-  const [goal, setGoal] = useState<Goal | null>(null);
-  const [goalTasks, setGoalTasks] = useState<Task[]>([]);
+  const { goal, isLoading: goalLoading } = useGoal(goalId);
+  const { tasks, isLoading: tasksLoading } = useTasksToday();
+  
+  const [showPlanPreview, setShowPlanPreview] = useState(false);
+  const [activeWeek, setActiveWeek] = useState(1);
+  const [selectedTask, setSelectedTask] = useState<Task | null>(null);
 
-  useEffect(() => {
-    // Find the goal by ID
-    const foundGoal = goals.find(g => g.id === goalId);
-    setGoal(foundGoal || null);
-    
-    // Fetch tasks for this goal
-    fetchDailyTasks();
-  }, [goalId, goals, fetchDailyTasks]);
+  // Mock data - replace with actual API calls
+  const mockProgress: GoalProgress = {
+    totalTasks: 84,
+    completedTasks: 23,
+    currentWeek: 3,
+    totalWeeks: 12,
+    onTrack: true,
+    daysAhead: 2,
+    daysBehind: 0
+  };
 
-  useEffect(() => {
-    // Filter tasks for this specific goal
-    const filtered = dailyTasks.filter(task => task.goalId === goalId);
-    setGoalTasks(filtered);
-  }, [dailyTasks, goalId]);
+  const mockWeeks: PlanWeek[] = [
+    {
+      week: 1,
+      milestone: "Learn Python Basics",
+      days: [
+        { day: 1, task: "Install Python & Set up IDE", estimatedTime: 60 },
+        { day: 2, task: "Understand variables and data types", estimatedTime: 90 },
+        { day: 3, task: "Practice basic input/output", estimatedTime: 45 },
+        { day: 4, task: "Work with strings and string methods", estimatedTime: 75 },
+        { day: 5, task: "Lists and list operations", estimatedTime: 80 },
+        { day: 6, task: "Dictionaries and key-value pairs", estimatedTime: 70 },
+        { day: 7, task: "Week 1 Practice Project", estimatedTime: 120 }
+      ]
+    },
+    {
+      week: 2,
+      milestone: "Control Flow & Loops",
+      days: [
+        { day: 1, task: "If/Else statements and conditionals", estimatedTime: 60 },
+        { day: 2, task: "For loops and iteration", estimatedTime: 75 },
+        { day: 3, task: "While loops and loop control", estimatedTime: 65 },
+        { day: 4, task: "Nested loops and advanced iteration", estimatedTime: 90 },
+        { day: 5, task: "List comprehensions", estimatedTime: 85 },
+        { day: 6, task: "Exception handling basics", estimatedTime: 70 },
+        { day: 7, task: "Week 2 Practice Project", estimatedTime: 150 }
+      ]
+    },
+    {
+      week: 3,
+      milestone: "Functions & Modules",
+      days: [
+        { day: 1, task: "Creating and using functions", estimatedTime: 80 },
+        { day: 2, task: "Function parameters and arguments", estimatedTime: 90 },
+        { day: 3, task: "Lambda functions and map/filter", estimatedTime: 100 },
+        { day: 4, task: "Modules and packages", estimatedTime: 85 },
+        { day: 5, task: "Standard library exploration", estimatedTime: 95 },
+        { day: 6, task: "File handling and I/O operations", estimatedTime: 110 },
+        { day: 7, task: "Week 3 Practice Project", estimatedTime: 180 }
+      ]
+    }
+  ];
 
-  if (!goal) {
+  const currentWeekTasks = mockWeeks.find(w => w.week === activeWeek)?.days || [];
+  const progressPercentage = (mockProgress.completedTasks / mockProgress.totalTasks) * 100;
+
+  const handleTaskComplete = (taskId: string) => {
+    // Implementation for task completion
+    console.log("Task completed:", taskId);
+  };
+
+  const handleReviseGoal = () => {
+    setShowPlanPreview(true);
+  };
+
+  if (goalLoading || tasksLoading) {
     return (
-      <div className="min-h-screen bg-background flex items-center justify-center">
-        <div className="text-center">
-          <Target className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-          <h3 className="text-lg font-semibold mb-2">Goal not found</h3>
-          <p className="text-muted-foreground mb-4">The goal you're looking for doesn't exist.</p>
-          <Button onClick={() => router.push('/goals')}>
-            <ArrowLeft className="mr-2 h-4 w-4" />
-            Back to Goals
-          </Button>
+      <div className="min-h-screen bg-gray-950 p-6">
+        <div className="max-w-7xl mx-auto">
+          <div className="animate-pulse space-y-6">
+            <div className="h-8 bg-gray-800 rounded w-1/3"></div>
+            <div className="h-64 bg-gray-800 rounded"></div>
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+              <div className="h-96 bg-gray-800 rounded"></div>
+              <div className="h-96 bg-gray-800 rounded"></div>
+              <div className="h-96 bg-gray-800 rounded"></div>
+            </div>
+          </div>
         </div>
       </div>
     );
   }
 
-  const CategoryIcon = getCategoryIcon(goal.category);
-  const daysRemaining = getDaysRemaining(goal.endDate);
-  const completedTasks = goalTasks.filter(t => t.status === "COMPLETED").length;
-  const totalTasks = goalTasks.length;
-
-  const handleEdit = () => {
-    console.log("Edit goal:", goal.id);
-    // TODO: Navigate to edit page or open modal
-  };
-
-  const handleToggleStatus = () => {
-    console.log("Toggle goal status:", goal.id);
-    // TODO: Implement play/pause functionality
-  };
-
   return (
-    <div className="min-h-screen bg-background">
-      <div className="container mx-auto px-4 py-8 max-w-4xl">
+    <div className="min-h-screen bg-gray-950">
+      <div className="max-w-7xl mx-auto p-6">
         {/* Header */}
         <motion.div
           initial={{ opacity: 0, y: -20 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.6 }}
+          className="flex items-center justify-between mb-8"
         >
-          <div className="flex items-center gap-4 mb-6">
+          <div className="flex items-center gap-4">
             <Button
               variant="ghost"
               size="sm"
-              onClick={() => router.push('/goals')}
-              className="flex items-center gap-2"
+              onClick={() => router.back()}
+              className="text-gray-400 hover:text-white"
             >
-              <ArrowLeft className="h-4 w-4" />
-              Back to Goals
+              <ArrowLeft className="w-4 h-4 mr-2" />
+              Back
             </Button>
+            <div>
+              <h1 className="text-3xl font-bold text-white">
+                {goal?.name || "Master Python Programming"}
+              </h1>
+              <p className="text-gray-400 mt-1">
+                {goal?.description || "Complete Python mastery in 12 weeks"}
+              </p>
+            </div>
           </div>
+          
+          <div className="flex items-center gap-3">
+            <Button
+              onClick={handleReviseGoal}
+              variant="outline"
+              className="border-blue-500/30 text-blue-400 hover:bg-blue-500/10"
+            >
+              <Edit3 className="w-4 h-4 mr-2" />
+              Revise Plan
+            </Button>
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="ghost" size="sm">
+                  <Settings className="w-4 h-4" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="bg-gray-800 border-gray-700">
+                <DropdownMenuItem className="text-gray-300 hover:text-white">
+                  Export Progress
+                </DropdownMenuItem>
+                <DropdownMenuItem className="text-gray-300 hover:text-white">
+                  Share Goal
+                </DropdownMenuItem>
+                <DropdownMenuItem className="text-red-400 hover:text-red-300">
+                  Delete Goal
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          </div>
+        </motion.div>
 
-          {/* Goal Header Card */}
-          <Card className="mb-6">
-            <CardHeader>
-              <div className="flex items-start justify-between">
-                <div className="flex items-start gap-4 flex-1">
-                  <div className="p-3 bg-primary/10 rounded-lg">
-                    <CategoryIcon className="h-6 w-6 text-primary" />
-                  </div>
-                  <div className="flex-1">
-                    <div className="flex items-center gap-3 mb-2">
-                      <CardTitle className="text-2xl">{goal.title}</CardTitle>
-                      <StatusBadge status={goal.status} />
-                    </div>
-                    {goal.description && (
-                      <p className="text-muted-foreground mb-4">{goal.description}</p>
-                    )}
-                    
-                    {/* Goal Metadata */}
-                    <div className="flex flex-wrap items-center gap-6 text-sm text-muted-foreground">
-                      <div className="flex items-center gap-2">
-                        <Calendar className="h-4 w-4" />
-                        <span>{formatDate(goal.startDate)} → {formatDate(goal.endDate)}</span>
-                      </div>
-                      <div className="flex items-center gap-1 text-yellow-600">
-                        <Star className="h-4 w-4" />
-                        <span>{goal.priority}</span>
-                      </div>
-                      <div className="flex items-center gap-1">
-                        <Target className="h-4 w-4" />
-                        <span>{goal.difficulty}</span>
-                      </div>
-                      {goal.streak && goal.streak > 0 && (
-                        <div className="flex items-center gap-1 text-orange-600">
-                          <Zap className="h-4 w-4" />
-                          <span>{goal.streak} day streak</span>
-                        </div>
-                      )}
-                    </div>
-                  </div>
+        {/* Progress Overview */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.1 }}
+          className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8"
+        >
+          <Card className="bg-gray-900/50 border-gray-700">
+            <CardContent className="p-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-gray-400 text-sm">Overall Progress</p>
+                  <p className="text-2xl font-bold text-white">
+                    {Math.round(progressPercentage)}%
+                  </p>
                 </div>
-                
-                <div className="flex items-center gap-2">
-                  <Button variant="outline" size="sm" onClick={handleEdit}>
-                    <Edit className="h-4 w-4 mr-2" />
-                    Edit
-                  </Button>
-                  <Button 
-                    variant="outline" 
-                    size="sm" 
-                    onClick={handleToggleStatus}
-                    className={goal.status === "PAUSED" ? "text-green-600" : "text-orange-600"}
-                  >
-                    {goal.status === "PAUSED" ? (
+                <div className="p-3 bg-blue-500/10 rounded-lg">
+                  <Trophy className="w-6 h-6 text-blue-400" />
+                </div>
+              </div>
+              <Progress value={progressPercentage} className="mt-4" />
+            </CardContent>
+          </Card>
+
+          <Card className="bg-gray-900/50 border-gray-700">
+            <CardContent className="p-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-gray-400 text-sm">Current Week</p>
+                  <p className="text-2xl font-bold text-white">
+                    {mockProgress.currentWeek}/{mockProgress.totalWeeks}
+                  </p>
+                </div>
+                <div className="p-3 bg-purple-500/10 rounded-lg">
+                  <Calendar className="w-6 h-6 text-purple-400" />
+                </div>
+              </div>
+              <p className="text-xs text-gray-500 mt-2">
+                {mockProgress.totalWeeks - mockProgress.currentWeek} weeks remaining
+              </p>
+            </CardContent>
+          </Card>
+
+          <Card className="bg-gray-900/50 border-gray-700">
+            <CardContent className="p-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-gray-400 text-sm">Tasks Completed</p>
+                  <p className="text-2xl font-bold text-white">
+                    {mockProgress.completedTasks}/{mockProgress.totalTasks}
+                  </p>
+                </div>
+                <div className="p-3 bg-green-500/10 rounded-lg">
+                  <CheckCircle2 className="w-6 h-6 text-green-400" />
+                </div>
+              </div>
+              <p className="text-xs text-gray-500 mt-2">
+                {mockProgress.totalTasks - mockProgress.completedTasks} tasks remaining
+              </p>
+            </CardContent>
+          </Card>
+
+          <Card className="bg-gray-900/50 border-gray-700">
+            <CardContent className="p-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-gray-400 text-sm">Status</p>
+                  <div className="flex items-center gap-2 mt-1">
+                    {mockProgress.onTrack ? (
                       <>
-                        <Play className="h-4 w-4 mr-2" />
-                        Resume
+                        <TrendingUp className="w-4 h-4 text-green-400" />
+                        <span className="text-green-400 font-medium">On Track</span>
                       </>
                     ) : (
                       <>
-                        <Pause className="h-4 w-4 mr-2" />
-                        Pause
+                        <AlertCircle className="w-4 h-4 text-yellow-400" />
+                        <span className="text-yellow-400 font-medium">Behind</span>
                       </>
                     )}
-                  </Button>
+                  </div>
+                </div>
+                <div className="p-3 bg-green-500/10 rounded-lg">
+                  <Zap className="w-6 h-6 text-green-400" />
                 </div>
               </div>
-            </CardHeader>
-          </Card>
-        </motion.div>
-
-        {/* Progress and Stats */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.6, delay: 0.1 }}
-          className="grid md:grid-cols-3 gap-6 mb-6"
-        >
-          {/* Progress Card */}
-          <Card>
-            <CardHeader className="pb-3">
-              <CardTitle className="text-lg flex items-center gap-2">
-                <TrendingUp className="h-5 w-5 text-primary" />
-                Progress
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-3">
-                <div className="flex items-center justify-between">
-                  <span className="text-sm text-muted-foreground">Overall</span>
-                  <span className="text-lg font-bold">{goal.progress}%</span>
-                </div>
-                <Progress 
-                  value={goal.progress} 
-                  className="h-3"
-                  indicatorClassName={getProgressColor(goal.progress, goal.status)}
-                />
-                <div className="text-xs text-muted-foreground">
-                  {daysRemaining > 0 ? `${daysRemaining} days remaining` : 'Goal completed or overdue'}
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-
-          {/* Tasks Stats */}
-          <Card>
-            <CardHeader className="pb-3">
-              <CardTitle className="text-lg flex items-center gap-2">
-                <CheckCircle2 className="h-5 w-5 text-primary" />
-                Tasks
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-3">
-                <div className="flex items-center justify-between">
-                  <span className="text-sm text-muted-foreground">Completed</span>
-                  <span className="text-lg font-bold">{completedTasks}/{totalTasks}</span>
-                </div>
-                <Progress 
-                  value={totalTasks > 0 ? (completedTasks / totalTasks) * 100 : 0} 
-                  className="h-3"
-                  indicatorClassName="bg-green-500"
-                />
-                <div className="text-xs text-muted-foreground">
-                  {totalTasks - completedTasks} tasks remaining
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-
-          {/* Time Tracking */}
-          <Card>
-            <CardHeader className="pb-3">
-              <CardTitle className="text-lg flex items-center gap-2">
-                <Clock className="h-5 w-5 text-primary" />
-                Time
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-3">
-                <div className="flex items-center justify-between">
-                  <span className="text-sm text-muted-foreground">Logged</span>
-                  <span className="text-lg font-bold">
-                    {goal.actualHours || 0}h
-                    {goal.estimatedHours && ` / ${goal.estimatedHours}h`}
-                  </span>
-                </div>
-                {goal.estimatedHours && (
-                  <>
-                    <Progress 
-                      value={((goal.actualHours || 0) / goal.estimatedHours) * 100} 
-                      className="h-3"
-                      indicatorClassName="bg-blue-500"
-                    />
-                    <div className="text-xs text-muted-foreground">
-                      {Math.round(((goal.actualHours || 0) / goal.estimatedHours) * 100)}% of estimated time
-                    </div>
-                  </>
-                )}
-              </div>
-            </CardContent>
-          </Card>
-        </motion.div>
-
-        {/* Tags */}
-        {goal.tags.length > 0 && (
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6, delay: 0.2 }}
-            className="mb-6"
-          >
-            <Card>
-              <CardHeader className="pb-3">
-                <CardTitle className="text-lg flex items-center gap-2">
-                  <Tag className="h-5 w-5 text-primary" />
-                  Tags
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="flex flex-wrap gap-2">
-                  {goal.tags.map((tag) => (
-                    <span key={tag} className="px-2 py-1 bg-secondary text-secondary-foreground rounded text-xs">
-                      {tag}
-                    </span>
-                  ))}
-                </div>
-              </CardContent>
-            </Card>
-          </motion.div>
-        )}
-
-        {/* Tasks List */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.6, delay: 0.3 }}
-        >
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-lg flex items-center gap-2">
-                <Trophy className="h-5 w-5 text-primary" />
-                Daily Tasks
-                <span className="ml-auto px-2 py-1 bg-muted text-muted-foreground rounded text-sm">
-                  {completedTasks} / {totalTasks}
-                </span>
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              {goalTasks.length === 0 ? (
-                <div className="text-center py-8 text-muted-foreground">
-                  <Target className="h-12 w-12 mx-auto mb-4 opacity-50" />
-                  <p>No tasks available for this goal yet.</p>
-                  <p className="text-sm">Tasks will appear as you progress through your plan.</p>
-                </div>
-              ) : (
-                <div className="space-y-3">
-                  {goalTasks.map((task) => (
-                    <TaskItem key={task.id} task={task} />
-                  ))}
-                </div>
+              {mockProgress.daysAhead > 0 && (
+                <p className="text-xs text-green-400 mt-2">
+                  {mockProgress.daysAhead} days ahead of schedule
+                </p>
               )}
             </CardContent>
           </Card>
         </motion.div>
+
+        {/* Main Content */}
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+          {/* Weekly Timeline */}
+          <div className="lg:col-span-2">
+            <motion.div
+              initial={{ opacity: 0, x: -20 }}
+              animate={{ opacity: 1, x: 0 }}
+              transition={{ delay: 0.2 }}
+            >
+              <Card className="bg-gray-900/50 border-gray-700">
+                <CardHeader>
+                  <CardTitle className="text-white flex items-center gap-2">
+                    <Target className="w-5 h-5 text-blue-400" />
+                    Learning Roadmap
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <Tabs value={`week-${activeWeek}`} className="w-full">
+                    <TabsList className="grid w-full grid-cols-3 bg-gray-800/50">
+                      {mockWeeks.map((week) => (
+                        <TabsTrigger
+                          key={week.week}
+                          value={`week-${week.week}`}
+                          onClick={() => setActiveWeek(week.week)}
+                          className="data-[state=active]:bg-blue-600 data-[state=active]:text-white"
+                        >
+                          Week {week.week}
+                        </TabsTrigger>
+                      ))}
+                    </TabsList>
+
+                    {mockWeeks.map((week) => (
+                      <TabsContent key={week.week} value={`week-${week.week}`} className="mt-6">
+                        <div className="space-y-4">
+                          <div className="flex items-center gap-3 mb-6">
+                            <Badge variant="secondary" className="bg-blue-500/10 text-blue-400 border-blue-500/20">
+                              Week {week.week} Milestone
+                            </Badge>
+                            <h3 className="text-lg font-semibold text-white">{week.milestone}</h3>
+                          </div>
+
+                          <div className="space-y-3">
+                            {week.days.map((day, index) => {
+                              const isCompleted = index < 3; // Mock completion status
+                              const isCurrent = index === 3;
+                              
+                              return (
+                                <motion.div
+                                  key={day.day}
+                                  initial={{ opacity: 0, y: 10 }}
+                                  animate={{ opacity: 1, y: 0 }}
+                                  transition={{ delay: index * 0.05 }}
+                                  className={cn(
+                                    "flex items-center gap-4 p-4 rounded-lg border transition-all duration-200",
+                                    isCompleted
+                                      ? "bg-green-500/5 border-green-500/20"
+                                      : isCurrent
+                                      ? "bg-blue-500/5 border-blue-500/20"
+                                      : "bg-gray-800/30 border-gray-700 hover:border-gray-600"
+                                  )}
+                                >
+                                  <button
+                                    onClick={() => handleTaskComplete(`${week.week}-${day.day}`)}
+                                    className="flex-shrink-0"
+                                  >
+                                    {isCompleted ? (
+                                      <CheckCircle2 className="w-5 h-5 text-green-400" />
+                                    ) : (
+                                      <Circle className="w-5 h-5 text-gray-400 hover:text-blue-400" />
+                                    )}
+                                  </button>
+
+                                  <div className="flex-1 min-w-0">
+                                    <div className="flex items-center gap-2 mb-1">
+                                      <span className="text-xs font-medium text-gray-400">
+                                        Day {day.day}
+                                      </span>
+                                      {isCurrent && (
+                                        <Badge variant="secondary" className="bg-blue-500/10 text-blue-400 text-xs">
+                                          Current
+                                        </Badge>
+                                      )}
+                                    </div>
+                                    <p className={cn(
+                                      "text-sm font-medium",
+                                      isCompleted ? "text-green-300" : "text-gray-300"
+                                    )}>
+                                      {day.task}
+                                    </p>
+                                  </div>
+
+                                  <div className="flex items-center gap-3 text-xs text-gray-400">
+                                    {day.estimatedTime && (
+                                      <div className="flex items-center gap-1">
+                                        <Clock className="w-3 h-3" />
+                                        {day.estimatedTime}min
+                                      </div>
+                                    )}
+                                    <Button variant="ghost" size="sm" className="h-6 w-6 p-0">
+                                      <MoreHorizontal className="w-3 h-3" />
+                                    </Button>
+                                  </div>
+                                </motion.div>
+                              );
+                            })}
+                          </div>
+                        </div>
+                      </TabsContent>
+                    ))}
+                  </Tabs>
+                </CardContent>
+              </Card>
+            </motion.div>
+          </div>
+
+          {/* Sidebar */}
+          <div className="space-y-6">
+            {/* Today's Focus */}
+            <motion.div
+              initial={{ opacity: 0, x: 20 }}
+              animate={{ opacity: 1, x: 0 }}
+              transition={{ delay: 0.3 }}
+            >
+              <Card className="bg-gray-900/50 border-gray-700">
+                <CardHeader>
+                  <CardTitle className="text-white text-lg">Today's Focus</CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <div className="p-4 bg-blue-500/10 border border-blue-500/20 rounded-lg">
+                    <div className="flex items-center gap-2 mb-2">
+                      <div className="w-2 h-2 bg-blue-400 rounded-full"></div>
+                      <span className="text-xs font-medium text-blue-400">Day 4 - Week 3</span>
+                    </div>
+                    <p className="text-sm text-gray-300 font-medium">
+                      Modules and packages
+                    </p>
+                    <div className="flex items-center gap-2 mt-3">
+                      <Clock className="w-3 h-3 text-gray-400" />
+                      <span className="text-xs text-gray-400">85 minutes estimated</span>
+                    </div>
+                  </div>
+
+                  <div className="space-y-2">
+                    <h4 className="text-sm font-medium text-gray-400">This Week's Milestone</h4>
+                    <p className="text-sm text-gray-300">Functions & Modules</p>
+                    <Progress value={57} className="h-2" />
+                    <p className="text-xs text-gray-400">4/7 tasks completed</p>
+                  </div>
+                </CardContent>
+              </Card>
+            </motion.div>
+
+            {/* Quick Stats */}
+            <motion.div
+              initial={{ opacity: 0, x: 20 }}
+              animate={{ opacity: 1, x: 0 }}
+              transition={{ delay: 0.4 }}
+            >
+              <Card className="bg-gray-900/50 border-gray-700">
+                <CardHeader>
+                  <CardTitle className="text-white text-lg">Quick Stats</CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <div className="flex justify-between items-center">
+                    <span className="text-sm text-gray-400">Streak</span>
+                    <span className="text-sm font-medium text-orange-400">7 days</span>
+                  </div>
+                  <div className="flex justify-between items-center">
+                    <span className="text-sm text-gray-400">Avg. Time/Day</span>
+                    <span className="text-sm font-medium text-blue-400">1.2 hours</span>
+                  </div>
+                  <div className="flex justify-between items-center">
+                    <span className="text-sm text-gray-400">Best Week</span>
+                    <span className="text-sm font-medium text-green-400">Week 2</span>
+                  </div>
+                  <div className="flex justify-between items-center">
+                    <span className="text-sm text-gray-400">Completion Rate</span>
+                    <span className="text-sm font-medium text-purple-400">94%</span>
+                  </div>
+                </CardContent>
+              </Card>
+            </motion.div>
+
+            {/* Motivational Section */}
+            <motion.div
+              initial={{ opacity: 0, x: 20 }}
+              animate={{ opacity: 1, x: 0 }}
+              transition={{ delay: 0.5 }}
+            >
+              <Card className="bg-gradient-to-br from-purple-900/20 to-blue-900/20 border-purple-500/20">
+                <CardContent className="p-6">
+                  <div className="text-center">
+                    <div className="p-3 bg-purple-500/10 rounded-full w-12 h-12 mx-auto mb-4">
+                      <Trophy className="w-6 h-6 text-purple-400 mx-auto" />
+                    </div>
+                    <h3 className="text-lg font-semibold text-white mb-2">
+                      You're Crushing It!
+                    </h3>
+                    <p className="text-sm text-gray-300 mb-4">
+                      You're 2 days ahead of schedule. Keep up the amazing work!
+                    </p>
+                    <Button size="sm" className="bg-purple-600 hover:bg-purple-700">
+                      View Achievements
+                    </Button>
+                  </div>
+                </CardContent>
+              </Card>
+            </motion.div>
+          </div>
+        </div>
+
+        {/* Plan Preview Modal */}
+        <PlanPreview
+          isOpen={showPlanPreview}
+          onClose={() => setShowPlanPreview(false)}
+          onAccept={() => {
+            console.log("Plan accepted");
+            setShowPlanPreview(false);
+          }}
+          onReject={() => {
+            console.log("Plan rejected, regenerating...");
+            // Handle plan regeneration
+          }}
+          plan={mockWeeks}
+          goalName={goal?.name || "Master Python Programming"}
+          totalDays={84}
+          timePerDay={2}
+          skillLevel="beginner"
+        />
       </div>
     </div>
   );

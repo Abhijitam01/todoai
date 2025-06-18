@@ -22,7 +22,7 @@
     "react": "^18.0.0"
   },
   "devDependencies": {
-    "@todoai/ui": "workspace:^",
+    "@todoai/ui": "file:../ui",
     "@types/nodemailer": "^6.4.14",
     "@types/react": "^18.0.0",
     "@types/node": "^20.0.0",
