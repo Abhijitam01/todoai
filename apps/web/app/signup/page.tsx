@@ -15,7 +15,8 @@ import { useToast } from "@/components/ui/toast";
 import { useAuthStore } from "@/lib/store/auth";
 
 const signupSchema = z.object({
-  name: z.string().min(2, "Name is required"),
+  firstName: z.string().min(1, "First name is required"),
+  lastName: z.string().min(1, "Last name is required"),
   email: z.string().email("Invalid email address"),
   password: z.string().min(6, "Password must be at least 6 characters"),
   confirmPassword: z.string()
@@ -34,7 +35,8 @@ export default function SignupPage() {
   const form = useForm<SignupFormValues>({
     resolver: zodResolver(signupSchema),
     defaultValues: {
-      name: "",
+      firstName: "",
+      lastName: "",
       email: "",
       password: "",
       confirmPassword: "",
@@ -44,7 +46,8 @@ export default function SignupPage() {
   const onSubmit = async (values: SignupFormValues) => {
     try {
       const res = await api.post('/auth/register', {
-        name: values.name,
+        firstName: values.firstName,
+        lastName: values.lastName,
         email: values.email,
         password: values.password,
       });
@@ -60,9 +63,11 @@ export default function SignupPage() {
       });
       router.push('/');
     } catch (err: any) {
+      console.error('Signup error:', err);
+      const errorMessage = err.response?.data?.error || err.message || "Registration failed";
       addToast({
         title: "Signup failed",
-        description: "Please try again with a different email.",
+        description: errorMessage,
         type: "error",
       });
     }
@@ -77,12 +82,25 @@ export default function SignupPage() {
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-5">
             <FormField
               control={form.control}
-              name="name"
+              name="firstName"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Name</FormLabel>
+                  <FormLabel>First Name</FormLabel>
                   <FormControl>
-                    <Input placeholder="Your name" {...field} autoComplete="name" />
+                    <Input placeholder="First name" {...field} autoComplete="given-name" />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            <FormField
+              control={form.control}
+              name="lastName"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Last Name</FormLabel>
+                  <FormControl>
+                    <Input placeholder="Last name" {...field} autoComplete="family-name" />
                   </FormControl>
                   <FormMessage />
                 </FormItem>

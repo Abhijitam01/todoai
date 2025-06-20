@@ -2,14 +2,8 @@ import { Router } from 'express';
 import { Request, Response, NextFunction } from 'express';
 import { db, tasks, eq, and, or } from '@todoai/database';
 import { gte, lte } from 'drizzle-orm';
-<<<<<<< HEAD
 import { tasksCompletedCounter } from '../app';
-import { goalQueueService } from '../queues/goal.queue';
 
-=======
--import { tasksCompletedCounter } from '../app';
-+import { tasksCompletedCounter } from '../metrics';
->>>>>>> 5902c6537ea3dd13f98a819999edffc8998976a1
 const router = Router();
 
 /**
@@ -24,43 +18,7 @@ const router = Router();
  *       200:
  *         description: Today's tasks retrieved successfully
  */
-router.get('/today', async (req: Request, res: Response, next: NextFunction) => {
-  try {
-    const userId = (req as any).user?.id;
-    if (!userId) {
-      return res.status(401).json({ success: false, message: 'Unauthorized' });
-    }
-
-    // Get today's date in UTC (YYYY-MM-DD)
-    const today = new Date();
-    const yyyy = today.getUTCFullYear();
-    const mm = String(today.getUTCMonth() + 1).padStart(2, '0');
-    const dd = String(today.getUTCDate()).padStart(2, '0');
-    const todayStr = `${yyyy}-${mm}-${dd}`;
-    const todayStart = new Date(`${todayStr}T00:00:00.000Z`);
-    const todayEnd = new Date(`${todayStr}T23:59:59.999Z`);
-
-    // Query tasks for this user, due today, status pending or overdue, not archived
-    const todayTasks = await db.select().from(tasks)
-      .where(
-        and(
-          eq(tasks.userId, userId),
-          or(eq(tasks.status, 'pending'), eq(tasks.status, 'overdue')),
-          eq(tasks.isArchived, false),
-          gte(tasks.dueDate, todayStart),
-          lte(tasks.dueDate, todayEnd)
-        )
-      );
-
-    return res.json({
-      success: true,
-      message: "Today's tasks retrieved successfully",
-      data: todayTasks,
-    });
-  } catch (error) {
-    return next(error);
-  }
-});
+router.get('/today', getTodayTasks);
 
 /**
  * @swagger
@@ -85,46 +43,7 @@ router.get('/today', async (req: Request, res: Response, next: NextFunction) => 
  *       200:
  *         description: Tasks retrieved successfully
  */
-router.get('/', async (req: Request, res: Response, next: NextFunction) => {
-  try {
-    const userId = (req as any).user?.id;
-    if (!userId) {
-      return res.status(401).json({ success: false, message: 'Unauthorized' });
-    }
-
-    const { goalId, status, startDate, endDate } = req.query;
-    const filters = [eq(tasks.userId, userId), eq(tasks.isArchived, false)];
-
-    if (goalId) {
-      filters.push(eq(tasks.goalId, goalId as string));
-    }
-    if (status) {
-      filters.push(eq(tasks.status, status as string));
-    }
-    if (startDate) {
-      filters.push(gte(tasks.dueDate, new Date(startDate as string)));
-    }
-    if (endDate) {
-      filters.push(lte(tasks.dueDate, new Date(endDate as string)));
-    }
-
-    const allTasks = await db.select().from(tasks).where(and(...filters));
-
-    return res.json({
-      success: true,
-      message: 'Tasks retrieved successfully',
-      data: allTasks,
-      pagination: {
-        page: 1,
-        limit: allTasks.length,
-        total: allTasks.length,
-        totalPages: 1
-      }
-    });
-  } catch (error) {
-    return next(error);
-  }
-});
+router.get('/', getAllTasks);
 
 /**
  * @swagger
@@ -156,23 +75,18 @@ router.get('/', async (req: Request, res: Response, next: NextFunction) => {
  *       201:
  *         description: Task created successfully
  */
-router.post('/', async (req: Request, res: Response, next: NextFunction) => {
-  try {
-    // TODO: Implement create task logic
-    return res.status(201).json({ 
-      success: true, 
-      message: 'Task created successfully',
-      data: { 
-        id: 'placeholder-id',
-        ...req.body,
-        status: 'todo',
-        createdAt: new Date().toISOString()
-      }
-    });
-  } catch (error) {
-    return next(error);
-  }
-});
+// Import the task controller functions
+import { 
+  createTask, 
+  getAllTasks, 
+  getTodayTasks, 
+  getTask, 
+  updateTask, 
+  deleteTask, 
+  markOverdueTasks 
+} from '../controllers/tasks.controller';
+
+router.post('/', createTask);
 
 /**
  * @swagger
@@ -194,7 +108,17 @@ router.post('/', async (req: Request, res: Response, next: NextFunction) => {
  *       404:
  *         description: Task not found
  */
-router.get('/:id', async (req: Request, res: Response, next: NextFunction) => {
+router.get('/:id', getTask);
+
+// Add the missing PATCH and DELETE routes
+router.patch('/:id', updateTask);
+router.delete('/:id', deleteTask);
+
+// Add utility route for marking overdue tasks
+router.post('/mark-overdue', markOverdueTasks);
+
+// Keep the existing incomplete route for reference
+router.get('/:id/incomplete', async (req: Request, res: Response, next: NextFunction) => {
   try {
     const userId = (req as any).user?.id;
     if (!userId) {

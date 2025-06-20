@@ -3,6 +3,10 @@ import { Request, Response, NextFunction } from 'express';
 import { db, users, refreshTokens } from '@todoai/database'
 import { eq } from 'drizzle-orm'
 import { signAccessToken, signRefreshToken, hashPassword, verifyPassword, authService, verifyAccessToken } from '@todoai/auth'
+import { authMiddleware } from '../middleware/auth';
+
+// Import auth controller functions
+import { register, login, getProfile, updateProfile, logout } from '../controllers/auth.controller';
 
 const router = Router();
 
@@ -29,57 +33,7 @@ const router = Router();
  *       401:
  *         description: Invalid credentials
  */
-router.post('/login', async (req: Request, res: Response, next: NextFunction) => {
-  try {
-    const { email, password } = req.body
-
-    if (!authService.isValidEmail(email)) {
-      return res.status(400).json({ success: false, message: 'Invalid email format' })
-    }
-
-    // Fetch user from DB
-    const [user] = await db.select().from(users).where(eq(users.email, email))
-
-    if (!user) {
-      return res.status(401).json({ success: false, message: 'Invalid credentials' })
-    }
-
-    const passwordMatches = await verifyPassword(password, user.password)
-
-    if (!passwordMatches) {
-      return res.status(401).json({ success: false, message: 'Invalid credentials' })
-    }
-
-    const accessToken = signAccessToken({ userId: user.id, email: user.email })
-    const refreshToken = signRefreshToken(user.id)
-
-    // Persist refresh token (30 days expiry)
-    const expiry = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000)
-    await db.insert(refreshTokens).values({
-      userId: user.id,
-      token: refreshToken,
-      expiresAt: expiry,
-    })
-
-    // Update last login timestamp
-    await db.update(users).set({ lastLoginAt: new Date() }).where(eq(users.id, user.id))
-
-    return res.json({
-      success: true,
-      message: 'Login successful',
-      data: {
-        user: { id: user.id, email: user.email, firstName: user.firstName, lastName: user.lastName },
-        tokens: {
-          accessToken,
-          refreshToken,
-          expiresIn: 24 * 60 * 60, // 24h in seconds
-        },
-      },
-    })
-  } catch (error: unknown) {
-    return next(error as Error)
-  }
-});
+router.post('/login', login);
 
 /**
  * @swagger
@@ -106,60 +60,7 @@ router.post('/login', async (req: Request, res: Response, next: NextFunction) =>
  *       400:
  *         description: Invalid input
  */
-router.post('/register', async (req: Request, res: Response, next: NextFunction) => {
-  try {
-    const { email, password, name: fullName } = req.body
-
-    if (!authService.isValidEmail(email)) {
-      return res.status(400).json({ success: false, message: 'Invalid email format' })
-    }
-
-    const passValidation = authService.isValidPassword(password)
-    if (!passValidation.valid) {
-      return res.status(400).json({ success: false, message: passValidation.message })
-    }
-
-    // Check duplicate
-    const existing = await db.select().from(users).where(eq(users.email, email))
-    if (existing.length > 0) {
-      return res.status(409).json({ success: false, message: 'Email already registered' })
-    }
-
-    const hashed = await hashPassword(password)
-
-    const [newUser] = await db.insert(users).values({
-      email,
-      password: hashed,
-      firstName: fullName,
-      createdAt: new Date(),
-      updatedAt: new Date(),
-    }).returning()
-
-    if (!newUser) {
-      throw new Error('User creation failed')
-    }
-
-    const createdUser = newUser!
-
-    const accessToken = signAccessToken({ userId: createdUser.id, email: createdUser.email })
-    const refreshToken = signRefreshToken(createdUser.id)
-
-    return res.status(201).json({
-      success: true,
-      message: 'Registration successful',
-      data: {
-        user: { id: createdUser.id, email: createdUser.email, firstName: createdUser.firstName },
-        tokens: {
-          accessToken,
-          refreshToken,
-          expiresIn: 24 * 60 * 60,
-        },
-      },
-    })
-  } catch (error: unknown) {
-    return next(error as Error)
-  }
-});
+router.post('/register', register);
 
 /**
  * @swagger
@@ -173,21 +74,7 @@ router.post('/register', async (req: Request, res: Response, next: NextFunction)
  *       200:
  *         description: Logout successful
  */
-router.post('/logout', async (req: Request, res: Response, next: NextFunction) => {
-  try {
-    const { refreshToken } = req.body as { refreshToken?: string }
-    if (!refreshToken) {
-      return res.status(400).json({ success: false, message: 'refreshToken is required' })
-    }
-
-    // Revoke token in DB
-    await db.update(refreshTokens).set({ isRevoked: true }).where(eq(refreshTokens.token, refreshToken))
-
-    return res.json({ success: true, message: 'Logout successful' })
-  } catch (error: unknown) {
-    return next(error as Error)
-  }
-});
+router.post('/logout', logout);
 
 /**
  * @swagger
@@ -265,5 +152,51 @@ router.post('/refresh', async (req: Request, res: Response, next: NextFunction) 
     return next(error as Error)
   }
 })
+
+// Profile routes (protected)
+/**
+ * @swagger
+ * /api/v1/auth/me:
+ *   get:
+ *     summary: Get current user profile
+ *     tags: [Authentication]
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: Profile retrieved successfully
+ *       401:
+ *         description: Unauthorized
+ */
+router.get('/me', authMiddleware, getProfile);
+
+/**
+ * @swagger
+ * /api/v1/auth/profile:
+ *   patch:
+ *     summary: Update user profile
+ *     tags: [Authentication]
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               firstName:
+ *                 type: string
+ *               lastName:
+ *                 type: string
+ *               avatar:
+ *                 type: string
+ *     responses:
+ *       200:
+ *         description: Profile updated successfully
+ *       401:
+ *         description: Unauthorized
+ */
+router.patch('/profile', authMiddleware, updateProfile);
 
 export default router; 

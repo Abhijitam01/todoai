@@ -4,9 +4,17 @@ import { neon } from '@neondatabase/serverless';
 
 const router = Router();
 
-// Database connection
-if (!process.env.DATABASE_URL) throw new Error('DATABASE_URL is not set. Please ensure you have a .env file with DATABASE_URL defined, and that dotenv is loaded in your test setup.');
-const sql = neon(process.env.DATABASE_URL!);
+// Database connection - lazy initialization
+let sql: any = null;
+const getSql = () => {
+  if (!sql) {
+    if (!process.env.DATABASE_URL) {
+      throw new Error('DATABASE_URL is not set. Please ensure you have a .env file with DATABASE_URL defined, and that dotenv is loaded in your test setup.');
+    }
+    sql = neon(process.env.DATABASE_URL);
+  }
+  return sql;
+};
 
 // Validation schema
 const WaitlistSchema = z.object({
@@ -91,7 +99,8 @@ router.post('/', waitlistRateLimit, async (req: Request, res: Response) => {
     }
 
     // Insert into database
-    const result = await sql`
+    const sqlConnection = getSql();
+    const result = await sqlConnection`
       INSERT INTO waitlist (email, source, referrer, created_at, updated_at)
       VALUES (${email}, ${source}, ${referrer || null}, NOW(), NOW())
       ON CONFLICT (email) 
@@ -165,7 +174,8 @@ router.post('/', waitlistRateLimit, async (req: Request, res: Response) => {
  */
 router.get('/stats', async (req: Request, res: Response) => {
   try {
-    const stats = await sql`
+    const sqlConnection = getSql();
+    const stats = await sqlConnection`
       SELECT 
         COUNT(*) as total_signups,
         COUNT(CASE WHEN created_at >= NOW() - INTERVAL '24 hours' THEN 1 END) as signups_24h,
