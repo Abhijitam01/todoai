@@ -1,11 +1,32 @@
 import { Router } from 'express';
 import { Request, Response, NextFunction } from 'express';
-import { db, goals } from '@todoai/database';
-import { and, eq } from 'drizzle-orm';
+import { db, goals, tasks } from '@todoai/database';
+import { and, eq, desc, count, sql } from 'drizzle-orm';
 import { goalQueue } from '../queues/goal.queue';
 import { goalsCreatedCounter, aiPlanRevisionsCounter } from '../app';
+import { z } from 'zod';
 
 const router = Router();
+
+// Validation schemas
+const CreateGoalSchema = z.object({
+  title: z.string().min(1, 'Title is required').max(255, 'Title too long'),
+  description: z.string().optional(),
+  category: z.string().optional(),
+  priority: z.enum(['low', 'medium', 'high', 'urgent']).default('medium'),
+  targetDate: z.string().datetime().optional(),
+  tags: z.array(z.string()).optional()
+});
+
+const UpdateGoalSchema = z.object({
+  title: z.string().min(1).max(255).optional(),
+  description: z.string().optional(),
+  category: z.string().optional(),
+  priority: z.enum(['low', 'medium', 'high', 'urgent']).optional(),
+  status: z.enum(['active', 'paused', 'completed', 'cancelled']).optional(),
+  targetDate: z.string().datetime().optional(),
+  tags: z.array(z.string()).optional()
+});
 
 /**
  * @swagger
@@ -32,16 +53,84 @@ const router = Router();
  */
 router.get('/', async (req: Request, res: Response, next: NextFunction) => {
   try {
-    // TODO: Implement get goals logic
+    const userId = (req as any).user?.id;
+    if (!userId) {
+      return res.status(401).json({ 
+        success: false, 
+        error: {
+          code: 'UNAUTHORIZED',
+          message: 'User not authenticated'
+        }
+      });
+    }
+
+    const { page = 1, limit = 10, status, category, includeStats = false } = req.query;
+    
+    // Build where conditions
+    const whereConditions = [
+      eq(goals.userId, userId),
+      eq(goals.isArchived, false)
+    ];
+    
+    if (status) whereConditions.push(eq(goals.status, status as string));
+    if (category) whereConditions.push(eq(goals.category, category as string));
+
+    // Get total count for pagination
+    const [totalCount] = await db
+      .select({ count: count() })
+      .from(goals)
+      .where(and(...whereConditions));
+
+    // Get paginated goals
+    const goalsData = await db
+      .select()
+      .from(goals)
+      .where(and(...whereConditions))
+      .limit(Number(limit))
+      .offset((Number(page) - 1) * Number(limit))
+      .orderBy(desc(goals.createdAt));
+
+    // Get task statistics for each goal if requested
+    let goalsWithStats = goalsData;
+    if (includeStats === 'true') {
+      goalsWithStats = await Promise.all(
+        goalsData.map(async (goal) => {
+          const [taskStats] = await db
+            .select({
+              total: count(),
+              completed: count(sql`CASE WHEN status = 'completed' THEN 1 END`),
+              pending: count(sql`CASE WHEN status = 'pending' THEN 1 END`),
+              overdue: count(sql`CASE WHEN status = 'overdue' THEN 1 END`)
+            })
+            .from(tasks)
+            .where(and(
+              eq(tasks.goalId, goal.id),
+              eq(tasks.isArchived, false)
+            ));
+
+          return {
+            ...goal,
+            taskStats: {
+              total: taskStats.total,
+              completed: taskStats.completed,
+              pending: taskStats.pending,
+              overdue: taskStats.overdue,
+              progress: taskStats.total > 0 ? Math.round((taskStats.completed / taskStats.total) * 100) : 0
+            }
+          };
+        })
+      );
+    }
+
     res.json({ 
       success: true, 
       message: 'Goals retrieved successfully',
-      data: [],
+      data: goalsWithStats,
       pagination: {
-        page: 1,
-        limit: 10,
-        total: 0,
-        totalPages: 0
+        page: Number(page),
+        limit: Number(limit),
+        total: totalCount.count,
+        totalPages: Math.ceil(totalCount.count / Number(limit))
       }
     });
   } catch (error) {
@@ -81,15 +170,75 @@ router.get('/', async (req: Request, res: Response, next: NextFunction) => {
  */
 router.post('/', async (req: Request, res: Response, next: NextFunction) => {
   try {
-    // TODO: Implement create goal logic
+    const userId = (req as any).user?.id;
+    if (!userId) {
+      return res.status(401).json({ 
+        success: false, 
+        error: {
+          code: 'UNAUTHORIZED',
+          message: 'User not authenticated'
+        }
+      });
+    }
+
+    // Validate input
+    const validationResult = CreateGoalSchema.safeParse(req.body);
+    if (!validationResult.success) {
+      const errors = validationResult.error.errors.map((err: any) => ({
+        field: err.path.join('.'),
+        message: err.message
+      }));
+      
+      return res.status(400).json({
+        success: false,
+        error: {
+          code: 'VALIDATION_ERROR',
+          message: 'Invalid input data',
+          details: errors
+        }
+      });
+    }
+
+    const { title, description, category, priority, targetDate, tags } = validationResult.data;
+
+    // Create goal
+    const [newGoal] = await db.insert(goals).values({
+      userId,
+      title,
+      description: description || null,
+      category: category || null,
+      priority,
+      status: 'active',
+      targetDate: targetDate ? new Date(targetDate) : null,
+      tags: tags ? JSON.stringify(tags) : null,
+      progress: 0,
+      isArchived: false,
+      createdAt: new Date(),
+      updatedAt: new Date()
+    }).returning();
+
+    if (!newGoal) {
+      return res.status(500).json({
+        success: false,
+        error: {
+          code: 'GOAL_CREATION_FAILED',
+          message: 'Failed to create goal'
+        }
+      });
+    }
+
+    // Increment metrics
     goalsCreatedCounter.inc();
+
+    // TODO: Trigger AI plan generation if needed
+    // await goalQueue.add('generate-plan', { goalId: newGoal.id, userId });
+
     res.status(201).json({ 
       success: true, 
       message: 'Goal created successfully',
-      data: { 
-        id: 'placeholder-id',
-        ...req.body,
-        createdAt: new Date().toISOString()
+      data: {
+        ...newGoal,
+        tags: tags || []
       }
     });
   } catch (error) {

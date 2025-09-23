@@ -1,11 +1,8 @@
 import { Router, Request, Response } from 'express';
 import { z } from 'zod';
-import { neon } from '@neondatabase/serverless';
+import { db } from '@todoai/database';
 
 const router = Router();
-
-// Database connection
-const sql = neon(process.env.DATABASE_URL!);
 
 // Validation schema
 const FeedbackSchema = z.object({

@@ -6,7 +6,7 @@ import { signAccessToken, signRefreshToken, hashPassword, verifyPassword, authSe
 import { authMiddleware } from '../middleware/auth';
 
 // Import auth controller functions
-import { register, login, getProfile, updateProfile, logout } from '../controllers/auth.controller';
+import { register, login, getProfile, updateProfile, logout, refreshToken, authRateLimit } from '../controllers/auth.controller';
 
 const router = Router();
 
@@ -33,7 +33,7 @@ const router = Router();
  *       401:
  *         description: Invalid credentials
  */
-router.post('/login', login);
+router.post('/login', authRateLimit, login);
 
 /**
  * @swagger
@@ -52,7 +52,9 @@ router.post('/login', login);
  *                 type: string
  *               password:
  *                 type: string
- *               name:
+ *               firstName:
+ *                 type: string
+ *               lastName:
  *                 type: string
  *     responses:
  *       201:
@@ -60,7 +62,7 @@ router.post('/login', login);
  *       400:
  *         description: Invalid input
  */
-router.post('/register', register);
+router.post('/register', authRateLimit, register);
 
 /**
  * @swagger
@@ -99,59 +101,7 @@ router.post('/logout', logout);
  *       401:
  *         description: Invalid refresh token
  */
-router.post('/refresh', async (req: Request, res: Response, next: NextFunction) => {
-  try {
-    const { refreshToken } = req.body as { refreshToken?: string }
-
-    if (!refreshToken) {
-      return res.status(400).json({ success: false, message: 'refreshToken is required' })
-    }
-
-    let decoded: { userId: string, iat: number, exp: number }
-    try {
-      decoded = verifyAccessToken(refreshToken) as any // reuse verify with same secret
-    } catch (err) {
-      return res.status(401).json({ success: false, message: 'Invalid refresh token' })
-    }
-
-    // Validate token exists and not revoked / expired
-    const [stored] = await db.select().from(refreshTokens).where(eq(refreshTokens.token, refreshToken))
-    if (!stored || stored.isRevoked || new Date(stored.expiresAt) < new Date()) {
-      return res.status(401).json({ success: false, message: 'Refresh token invalid or expired' })
-    }
-
-    const [user] = await db.select().from(users).where(eq(users.id, decoded.userId))
-    if (!user) {
-      return res.status(404).json({ success: false, message: 'User not found' })
-    }
-
-    // Revoke old token
-    await db.update(refreshTokens).set({ isRevoked: true }).where(eq(refreshTokens.token, refreshToken))
-
-    const newAccessToken = signAccessToken({ userId: user.id, email: user.email })
-    const newRefreshToken = signRefreshToken(user.id)
-
-    // Store new refresh token
-    await db.insert(refreshTokens).values({
-      userId: user.id,
-      token: newRefreshToken,
-      expiresAt: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
-    })
-
-    return res.json({
-      success: true,
-      data: {
-        tokens: {
-          accessToken: newAccessToken,
-          refreshToken: newRefreshToken,
-          expiresIn: 24 * 60 * 60,
-        },
-      },
-    })
-  } catch (error: unknown) {
-    return next(error as Error)
-  }
-})
+router.post('/refresh', refreshToken);
 
 // Profile routes (protected)
 /**
