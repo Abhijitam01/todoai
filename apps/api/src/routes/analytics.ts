@@ -1,11 +1,9 @@
 import express from 'express';
 import rateLimit from 'express-rate-limit';
-import { neon } from '@neondatabase/serverless';
+import { db } from '@todoai/database';
+import { sql } from 'drizzle-orm';
 
 const router = express.Router();
-
-// Database connection
-const sql = neon(process.env.DATABASE_URL!);
 
 // Rate limiting for analytics
 const analyticsRateLimit = rateLimit({

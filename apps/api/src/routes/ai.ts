@@ -1,14 +1,11 @@
 import express, { Request, Response, NextFunction } from 'express';
 import rateLimit from 'express-rate-limit';
 import { z } from 'zod';
-import { neon } from '@neondatabase/serverless';
 import { generateGoalPlan } from '../services/openai.service';
 import { db, aiInteractions } from '@todoai/database';
+import { sql } from 'drizzle-orm';
 
 const router = express.Router();
-
-// Database connection
-const sql = neon(process.env.DATABASE_URL!);
 
 // Rate limiting for AI endpoints - fix type issues
 const aiRateLimit = rateLimit({

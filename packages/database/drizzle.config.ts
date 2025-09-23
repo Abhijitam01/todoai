@@ -6,9 +6,9 @@ dotenv.config();
 export default {
   schema: './src/schema.ts',
   out: './migrations',
-  driver: 'pg',
+  driver: 'better-sqlite',
   dbCredentials: {
-    connectionString: process.env.DATABASE_URL!,
+    url: process.env.DATABASE_URL || '../../apps/api/dev.db',
   },
   verbose: true,
   strict: true,

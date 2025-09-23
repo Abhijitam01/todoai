@@ -177,15 +177,69 @@ router.get('/:id/incomplete', async (req: Request, res: Response, next: NextFunc
  */
 router.put('/:id', async (req: Request, res: Response, next: NextFunction) => {
   try {
-    // TODO: Implement update task logic
+    const userId = (req as any).user?.id;
+    if (!userId) {
+      return res.status(401).json({ success: false, message: 'Unauthorized' });
+    }
+
+    const { id } = req.params;
+    if (!id) {
+      return res.status(400).json({ success: false, message: 'Task ID is required' });
+    }
+
+    const { title, description, priority, status, dueDate, estimatedMinutes, actualMinutes } = req.body;
+
+    // Find and verify task ownership
+    const [existingTask] = await db.select().from(tasks).where(and(eq(tasks.id, id), eq(tasks.userId, userId), eq(tasks.isArchived, false)));
+    if (!existingTask) {
+      return res.status(404).json({ success: false, message: 'Task not found' });
+    }
+
+    // Prepare update data
+    const updateData: any = { updatedAt: new Date() };
+    
+    if (title !== undefined) updateData.title = title.trim();
+    if (description !== undefined) updateData.description = description;
+    if (priority !== undefined) updateData.priority = priority;
+    if (status !== undefined) {
+      updateData.status = status;
+      if (status === 'completed') {
+        updateData.completedAt = new Date();
+        tasksCompletedCounter.inc();
+      } else if (existingTask.status === 'completed' && status !== 'completed') {
+        updateData.completedAt = null;
+      }
+    }
+    if (dueDate !== undefined) updateData.dueDate = dueDate ? new Date(dueDate) : null;
+    if (estimatedMinutes !== undefined) updateData.estimatedMinutes = estimatedMinutes;
+    if (actualMinutes !== undefined) updateData.actualMinutes = actualMinutes;
+
+    // Update task
+    const [updatedTask] = await db.update(tasks)
+      .set(updateData)
+      .where(and(eq(tasks.id, id), eq(tasks.userId, userId)))
+      .returning();
+
+    if (!updatedTask) {
+      return res.status(500).json({ success: false, message: 'Failed to update task' });
+    }
+
+    // Trigger plan adaptation if task status changed and it's part of a goal
+    if (status && existingTask.goalId) {
+      try {
+        await goalQueue.add('adapt-plan', {
+          goalId: existingTask.goalId,
+          trigger: status === 'completed' ? 'task_completed' : 'task_status_changed',
+        });
+      } catch (error) {
+        console.error(`[Task Update] Failed to queue plan adaptation for goal ${existingTask.goalId}:`, error);
+      }
+    }
+
     return res.json({ 
       success: true, 
       message: 'Task updated successfully',
-      data: { 
-        id: req.params.id,
-        ...req.body,
-        updatedAt: new Date().toISOString()
-      }
+      data: updatedTask
     });
   } catch (error) {
     return next(error);

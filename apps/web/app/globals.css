@@ -122,6 +122,27 @@
   }
 }
 
+@keyframes border-dance {
+  0% {
+    transform: rotate(0deg);
+  }
+  100% {
+    transform: rotate(360deg);
+  }
+}
+
+@keyframes gradient {
+  0% {
+    background-position: 0% 50%;
+  }
+  50% {
+    background-position: 100% 50%;
+  }
+  100% {
+    background-position: 0% 50%;
+  }
+}
+
 /* Custom highlight animations for plan adaptation */
 @keyframes highlight-new {
   0% { background-color: rgba(45, 212, 191, 0.1); box-shadow: 0 0 12px rgba(45, 212, 191, 0.3); }

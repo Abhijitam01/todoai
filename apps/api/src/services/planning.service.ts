@@ -17,6 +17,32 @@ function getJaccardSimilarity(str1: string, str2: string): number {
 
 class PlanningService {
   /**
+   * Generate initial plan for a new goal using AI.
+   */
+  public async generateInitialPlan(goalId: string, params: {
+    duration_days: number;
+    time_per_day_hours: number;
+    skill_level: string;
+  }): Promise<{ success: boolean }> {
+    console.log(`[PlanningService] Starting initial plan generation for goalId: ${goalId}`);
+
+    const goal = await this.getGoal(goalId);
+    const prompt = this.constructInitialPlanPrompt(goal, params);
+    const aiPlan = await this.fetchAIPlan(prompt);
+    
+    if (!aiPlan || aiPlan.length === 0) {
+      console.error(`[PlanningService] AI returned an empty or invalid plan for goalId: ${goalId}`);
+      return { success: false };
+    }
+
+    await this.applyInitialPlan(goal, aiPlan);
+    await this.notifyUser(goal, { createdIds: [], updatedIds: [], archivedIds: [] });
+
+    console.log(`[PlanningService] Initial plan generation complete for goal: ${goal.title}`);
+    return { success: true };
+  }
+
+  /**
    * The core logic for adapting a goal's plan using AI.
    * This function is designed to be called from a background worker.
    */
@@ -55,6 +81,28 @@ class PlanningService {
 
   private async getTasksForGoal(goalId: string) {
     return db.select().from(tasks).where(and(eq(tasks.goalId, goalId), eq(tasks.isArchived, false)));
+  }
+
+  private constructInitialPlanPrompt(goal: Goal, params: {
+    duration_days: number;
+    time_per_day_hours: number;
+    skill_level: string;
+  }): string {
+    const prompt = `You are a productivity coach AI. A user wants to achieve the goal: "${goal.title}".
+Their timeframe is ${params.duration_days} days, and they can commit ${params.time_per_day_hours} hours per day.
+Their skill level is ${params.skill_level}.
+
+Please generate a comprehensive, realistic plan that breaks down this goal into manageable daily tasks.
+The plan should be structured to help them achieve their goal within the specified timeframe.
+
+Output as a JSON array of weeks. Each task must be a simple string. The plan should start from week 1, day 1.
+
+Example JSON structure:
+[
+  {"week": 1, "milestone": "Foundation", "days": [{"day": 1, "task": "Task description..."}, ...]},
+  ...
+]`;
+    return prompt;
   }
 
   private constructAdaptationPrompt(goal: Goal, completedTasks: any[], pendingTasks: any[]): string {
@@ -106,6 +154,51 @@ Example JSON structure:
       console.error(`[PlanningService] Error fetching or parsing AI plan:`, err);
       return [];
     }
+  }
+
+  private async applyInitialPlan(goal: Goal, aiPlan: any[]) {
+    const newTasksToInsert: any[] = [];
+    let order = 0;
+    const startDate = new Date(); // The plan starts from today
+
+    for (const week of aiPlan) {
+      for (const day of week.days) {
+        const dueDate = new Date(startDate);
+        dueDate.setDate(startDate.getDate() + (week.week - 1) * 7 + (day.day - 1));
+
+        newTasksToInsert.push({
+          userId: goal.userId,
+          goalId: goal.id,
+          title: day.task,
+          status: 'pending',
+          dueDate,
+          order: order++,
+          createdAt: new Date(),
+          updatedAt: new Date(),
+        });
+      }
+    }
+
+    // Insert all tasks in a single transaction
+    await db.transaction(async (tx) => {
+      console.log(`[DB Transaction] Inserting ${newTasksToInsert.length} new tasks for initial plan.`);
+      if (newTasksToInsert.length > 0) {
+        await tx.insert(tasks).values(newTasksToInsert);
+      }
+      
+      // Update the goal's progress to 0 and mark as active
+      await tx.update(goals).set({ 
+        progress: 0,
+        status: 'active',
+        updatedAt: new Date() 
+      }).where(eq(goals.id, goal.id));
+    });
+
+    return {
+      createdIds: newTasksToInsert.map(t => t.id),
+      updatedIds: [],
+      archivedIds: [],
+    };
   }
 
   private async reconcileAndApplyPlan(goal: Goal, aiPlan: any[], existingPendingTasks: any[]) {

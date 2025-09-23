@@ -76,10 +76,21 @@ router.get('/', async (req: Request, res: Response, next: NextFunction) => {
     if (category) whereConditions.push(eq(goals.category, category as string));
 
     // Get total count for pagination
-    const [totalCount] = await db
+    const totalCountResult = await db
       .select({ count: count() })
       .from(goals)
       .where(and(...whereConditions));
+    
+    const totalCount = totalCountResult[0];
+    if (!totalCount) {
+      return res.status(500).json({
+        success: false,
+        error: {
+          code: 'DATABASE_ERROR',
+          message: 'Failed to get total count'
+        }
+      });
+    }
 
     // Get paginated goals
     const goalsData = await db
@@ -95,7 +106,7 @@ router.get('/', async (req: Request, res: Response, next: NextFunction) => {
     if (includeStats === 'true') {
       goalsWithStats = await Promise.all(
         goalsData.map(async (goal) => {
-          const [taskStats] = await db
+          const taskStatsResult = await db
             .select({
               total: count(),
               completed: count(sql`CASE WHEN status = 'completed' THEN 1 END`),
@@ -107,6 +118,20 @@ router.get('/', async (req: Request, res: Response, next: NextFunction) => {
               eq(tasks.goalId, goal.id),
               eq(tasks.isArchived, false)
             ));
+
+          const taskStats = taskStatsResult[0];
+          if (!taskStats) {
+            return {
+              ...goal,
+              taskStats: {
+                total: 0,
+                completed: 0,
+                pending: 0,
+                overdue: 0,
+                progress: 0
+              }
+            };
+          }
 
           return {
             ...goal,
@@ -122,7 +147,7 @@ router.get('/', async (req: Request, res: Response, next: NextFunction) => {
       );
     }
 
-    res.json({ 
+    return res.json({ 
       success: true, 
       message: 'Goals retrieved successfully',
       data: goalsWithStats,
@@ -233,7 +258,7 @@ router.post('/', async (req: Request, res: Response, next: NextFunction) => {
     // TODO: Trigger AI plan generation if needed
     // await goalQueue.add('generate-plan', { goalId: newGoal.id, userId });
 
-    res.status(201).json({ 
+    return res.status(201).json({ 
       success: true, 
       message: 'Goal created successfully',
       data: {
@@ -268,15 +293,89 @@ router.post('/', async (req: Request, res: Response, next: NextFunction) => {
  */
 router.get('/:id', async (req: Request, res: Response, next: NextFunction) => {
   try {
-    // TODO: Implement get goal by ID logic
-    res.json({ 
+    const userId = (req as any).user?.id;
+    if (!userId) {
+      return res.status(401).json({ 
+        success: false, 
+        error: {
+          code: 'UNAUTHORIZED',
+          message: 'User not authenticated'
+        }
+      });
+    }
+
+    const { id } = req.params;
+    if (!id) {
+      return res.status(400).json({
+        success: false,
+        error: {
+          code: 'INVALID_GOAL_ID',
+          message: 'Goal ID is required'
+        }
+      });
+    }
+
+    // Get goal with task statistics
+    const [goal] = await db
+      .select()
+      .from(goals)
+      .where(and(
+        eq(goals.id, id),
+        eq(goals.userId, userId),
+        eq(goals.isArchived, false)
+      ));
+
+    if (!goal) {
+      return res.status(404).json({
+        success: false,
+        error: {
+          code: 'GOAL_NOT_FOUND',
+          message: 'Goal not found or not accessible'
+        }
+      });
+    }
+
+    // Get task statistics for this goal
+    const taskStatsResult = await db
+      .select({
+        total: count(),
+        completed: count(sql`CASE WHEN status = 'completed' THEN 1 END`),
+        pending: count(sql`CASE WHEN status = 'pending' THEN 1 END`),
+        overdue: count(sql`CASE WHEN status = 'overdue' THEN 1 END`)
+      })
+      .from(tasks)
+      .where(and(
+        eq(tasks.goalId, goal.id),
+        eq(tasks.isArchived, false)
+      ));
+
+    const taskStats = taskStatsResult[0];
+    if (!taskStats) {
+      return res.status(500).json({
+        success: false,
+        error: {
+          code: 'DATABASE_ERROR',
+          message: 'Failed to get task statistics'
+        }
+      });
+    }
+
+    const goalWithStats = {
+      ...goal,
+      taskStats: {
+        total: taskStats.total,
+        completed: taskStats.completed,
+        pending: taskStats.pending,
+        overdue: taskStats.overdue,
+        progress: taskStats.total > 0 ? Math.round((taskStats.completed / taskStats.total) * 100) : 0
+      },
+      tags: goal.tags ? JSON.parse(goal.tags) : []
+    };
+
+    return res.json({ 
       success: true, 
       message: 'Goal retrieved successfully',
-      data: { 
-        id: req.params.id,
-        title: 'Sample Goal',
-        description: 'This is a placeholder goal'
-      }
+      data: goalWithStats
     });
   } catch (error) {
     next(error);
@@ -316,14 +415,102 @@ router.get('/:id', async (req: Request, res: Response, next: NextFunction) => {
  */
 router.put('/:id', async (req: Request, res: Response, next: NextFunction) => {
   try {
-    // TODO: Implement update goal logic
-    res.json({ 
+    const userId = (req as any).user?.id;
+    if (!userId) {
+      return res.status(401).json({ 
+        success: false, 
+        error: {
+          code: 'UNAUTHORIZED',
+          message: 'User not authenticated'
+        }
+      });
+    }
+
+    const { id } = req.params;
+    if (!id) {
+      return res.status(400).json({
+        success: false,
+        error: {
+          code: 'INVALID_GOAL_ID',
+          message: 'Goal ID is required'
+        }
+      });
+    }
+
+    // Validate input
+    const validationResult = UpdateGoalSchema.safeParse(req.body);
+    if (!validationResult.success) {
+      const errors = validationResult.error.errors.map((err: any) => ({
+        field: err.path.join('.'),
+        message: err.message
+      }));
+      
+      return res.status(400).json({
+        success: false,
+        error: {
+          code: 'VALIDATION_ERROR',
+          message: 'Invalid input data',
+          details: errors
+        }
+      });
+    }
+
+    // Check if goal exists and user owns it
+    const [existingGoal] = await db
+      .select()
+      .from(goals)
+      .where(and(
+        eq(goals.id, id),
+        eq(goals.userId, userId),
+        eq(goals.isArchived, false)
+      ));
+
+    if (!existingGoal) {
+      return res.status(404).json({
+        success: false,
+        error: {
+          code: 'GOAL_NOT_FOUND',
+          message: 'Goal not found or not accessible'
+        }
+      });
+    }
+
+    const { title, description, category, priority, status, targetDate, tags } = validationResult.data;
+
+    // Prepare update data
+    const updateData: any = { updatedAt: new Date() };
+    
+    if (title !== undefined) updateData.title = title;
+    if (description !== undefined) updateData.description = description;
+    if (category !== undefined) updateData.category = category;
+    if (priority !== undefined) updateData.priority = priority;
+    if (status !== undefined) updateData.status = status;
+    if (targetDate !== undefined) updateData.targetDate = targetDate ? new Date(targetDate) : null;
+    if (tags !== undefined) updateData.tags = tags ? JSON.stringify(tags) : null;
+
+    // Update goal
+    const [updatedGoal] = await db
+      .update(goals)
+      .set(updateData)
+      .where(and(eq(goals.id, id), eq(goals.userId, userId)))
+      .returning();
+
+    if (!updatedGoal) {
+      return res.status(500).json({
+        success: false,
+        error: {
+          code: 'UPDATE_FAILED',
+          message: 'Failed to update goal'
+        }
+      });
+    }
+
+    return res.json({ 
       success: true, 
       message: 'Goal updated successfully',
-      data: { 
-        id: req.params.id,
-        ...req.body,
-        updatedAt: new Date().toISOString()
+      data: {
+        ...updatedGoal,
+        tags: updatedGoal.tags ? JSON.parse(updatedGoal.tags) : []
       }
     });
   } catch (error) {
@@ -363,8 +550,12 @@ router.delete('/:id', async (req: Request, res: Response, next: NextFunction) =>
     if (!goal) {
       return res.status(404).json({ success: false, message: 'Goal not found' });
     }
+    // Archive the goal
     await db.update(goals).set({ isArchived: true, updatedAt: new Date() }).where(and(eq(goals.id, id), eq(goals.userId, userId)));
-    // TODO: Cascade archive all tasks for this goal (stub)
+    
+    // Cascade archive all tasks for this goal
+    await db.update(tasks).set({ isArchived: true, updatedAt: new Date() }).where(and(eq(tasks.goalId, id), eq(tasks.userId, userId)));
+    
     const [archivedGoal] = await db.select().from(goals).where(and(eq(goals.id, id), eq(goals.userId, userId)));
     return res.json({
       success: true,
@@ -438,7 +629,21 @@ router.patch('/:id', async (req, res, next) => {
     updateData.updatedAt = new Date();
     await db.update(goals).set(updateData).where(and(eq(goals.id, id), eq(goals.userId, userId)));
     const [updatedGoal] = await db.select().from(goals).where(and(eq(goals.id, id), eq(goals.userId, userId)));
-    // TODO: Trigger plan adaptation/AI if timePerDay or targetDate changed (stub)
+    
+    // Trigger plan adaptation if timePerDay or targetDate changed
+    if (timePerDay || targetDate) {
+      try {
+        await goalQueue.add('adapt-plan', {
+          goalId: id,
+          trigger: 'manual_trigger',
+        });
+        console.log(`[Goal Update] Plan adaptation queued for goal ${id} due to parameter changes`);
+      } catch (error) {
+        console.error(`[Goal Update] Failed to queue plan adaptation for goal ${id}:`, error);
+        // Don't fail the request if adaptation queuing fails
+      }
+    }
+    
     return res.json({
       success: true,
       message: 'Goal updated successfully',
@@ -482,14 +687,25 @@ router.post('/:id/revise', async (req: Request, res: Response, next: NextFunctio
     if (!goal) {
       return res.status(404).json({ success: false, message: 'Goal not found' });
     }
-    // Enqueue a job for plan revision with all required fields
-    await goalQueue.add('revise-plan', {
+    // Calculate duration from target date or use default
+    const duration_days = goal.targetDate 
+      ? Math.ceil((new Date(goal.targetDate).getTime() - new Date().getTime()) / (1000 * 60 * 60 * 24))
+      : 90;
+    
+    // Extract time per day from goal data or use default
+    const time_per_day_hours = (goal as any).timePerDay || 1;
+    
+    // Extract skill level from goal data or use default
+    const skill_level = (goal as any).skillLevel || 'beginner';
+
+    // Enqueue a job for plan revision with actual goal data
+    await goalQueue.add('generate-plan', {
       goalId: id,
       userId,
-      name: goal.title,
-      duration_days: 90, // TODO: Replace with actual duration if available
-      time_per_day_hours: 1, // TODO: Replace with actual value if available
-      skill_level: 'beginner' as const, // TODO: Replace with actual value if available
+      goalName: goal.title,
+      durationDays: duration_days,
+      timePerDayHours: time_per_day_hours,
+      skillLevel: skill_level as 'beginner' | 'intermediate' | 'advanced',
     });
     aiPlanRevisionsCounter.inc();
     return res.status(202).json({

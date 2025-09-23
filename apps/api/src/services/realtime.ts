@@ -1,9 +1,8 @@
 import { Server as HTTPServer } from 'http';
 import { Server as SocketIOServer, Socket } from 'socket.io';
 import { verify } from 'jsonwebtoken';
-import { neon } from '@neondatabase/serverless';
-
-const sql = neon(process.env.DATABASE_URL!);
+import { db, users, goals, tasks, taskComments } from '@todoai/database';
+import { eq, and, sql } from 'drizzle-orm';
 
 interface AuthenticatedSocket extends Socket {
   userId?: number;
@@ -43,9 +42,12 @@ export class RealtimeService {
           const decoded = verify(token, process.env.JWT_SECRET!) as any;
           
           // Get user data from database
-          const userResult = await sql`
-            SELECT id, email, name FROM "User" WHERE id = ${decoded.userId}
-          `;
+          const userResult = await db.select({
+            id: users.id,
+            email: users.email,
+            firstName: users.firstName,
+            lastName: users.lastName
+          }).from(users).where(eq(users.id, decoded.userId)).limit(1);
 
           if (userResult.length === 0) {
             socket.emit('auth_error', { message: 'User not found' });
@@ -58,7 +60,11 @@ export class RealtimeService {
             return;
           }
           socket.userId = user.id;
-          socket.userData = user as { id: number; email: string; name: string };
+          socket.userData = {
+            id: user.id,
+            email: user.email,
+            name: `${user.firstName || ''} ${user.lastName || ''}`.trim() || user.email
+          };
 
           // Track connected users
           if (!this.connectedUsers.has(user.id)) {
@@ -86,11 +92,15 @@ export class RealtimeService {
         if (!socket.userId) return;
 
         try {
-          await sql`
-            UPDATE "Goal" 
-            SET progress = ${data.progress}, updated_at = NOW()
-            WHERE id = ${data.goalId} AND user_id = ${socket.userId}
-          `;
+          await db.update(goals)
+            .set({ 
+              progress: data.progress,
+              updatedAt: new Date()
+            })
+            .where(and(
+              eq(goals.id, data.goalId),
+              eq(goals.userId, socket.userId)
+            ));
 
           // Broadcast to all user's connected devices
           this.io.to(`user_${socket.userId}`).emit('goal_updated', {
@@ -111,12 +121,21 @@ export class RealtimeService {
         if (!socket.userId) return;
 
         try {
-          const result = await sql`
-            UPDATE "Task" 
-            SET completed = true, completed_at = NOW(), updated_at = NOW()
-            WHERE id = ${data.taskId} AND user_id = ${socket.userId}
-            RETURNING id, title, goal_id
-          `;
+          const result = await db.update(tasks)
+            .set({ 
+              status: 'completed',
+              completedAt: new Date(),
+              updatedAt: new Date()
+            })
+            .where(and(
+              eq(tasks.id, data.taskId),
+              eq(tasks.userId, socket.userId)
+            ))
+            .returning({
+              id: tasks.id,
+              title: tasks.title,
+              goalId: tasks.goalId
+            });
 
           if (result.length > 0) {
             const task = result[0];
@@ -174,6 +193,145 @@ export class RealtimeService {
           userId: socket.userId,
           goalId,
         });
+      });
+
+      // Real-time task updates
+      socket.on('task_updated', async (data: { taskId: number; updates: any }) => {
+        if (!socket.userId) return;
+
+        try {
+          // Build update object with only valid fields
+          const updateData: any = {
+            updatedAt: new Date()
+          };
+          
+          // Only update valid task fields
+          const validFields = ['title', 'description', 'status', 'priority', 'dueDate'];
+          for (const [key, value] of Object.entries(data.updates)) {
+            if (validFields.includes(key)) {
+              updateData[key] = value;
+            }
+          }
+          
+          const result = await db.update(tasks)
+            .set(updateData)
+            .where(and(
+              eq(tasks.id, data.taskId),
+              eq(tasks.userId, socket.userId)
+            ))
+            .returning({
+              id: tasks.id,
+              title: tasks.title,
+              goalId: tasks.goalId,
+              status: tasks.status,
+              priority: tasks.priority
+            });
+
+          if (result.length > 0) {
+            const task = result[0];
+            if (!task) return;
+            
+            // Broadcast task update to goal collaborators
+            this.io.to(`goal_${task.goal_id}`).emit('task_updated', {
+              taskId: task.id,
+              title: task.title,
+              status: task.status,
+              priority: task.priority,
+              updatedBy: socket.userId,
+              timestamp: new Date().toISOString(),
+            });
+          }
+        } catch (error) {
+          console.error('Error updating task:', error);
+          socket.emit('error', { message: 'Failed to update task' });
+        }
+      });
+
+      // Real-time goal updates
+      socket.on('goal_updated', async (data: { goalId: number; updates: any }) => {
+        if (!socket.userId) return;
+
+        try {
+          const result = await sql`
+            UPDATE "Goal" 
+            SET ${sql.raw(Object.keys(data.updates).map(key => `${key} = ${data.updates[key]}`).join(', '))}, updated_at = NOW()
+            WHERE id = ${data.goalId} AND user_id = ${socket.userId}
+            RETURNING id, title, description, status, progress
+          `;
+
+          if (result.length > 0) {
+            const goal = result[0];
+            if (!goal) return;
+            
+            // Broadcast goal update to collaborators
+            this.io.to(`goal_${goal.id}`).emit('goal_updated', {
+              goalId: goal.id,
+              title: goal.title,
+              description: goal.description,
+              status: goal.status,
+              progress: goal.progress,
+              updatedBy: socket.userId,
+              timestamp: new Date().toISOString(),
+            });
+          }
+        } catch (error) {
+          console.error('Error updating goal:', error);
+          socket.emit('error', { message: 'Failed to update goal' });
+        }
+      });
+
+      // Live cursor sharing for collaborative editing
+      socket.on('cursor_move', (data: { goalId: number; x: number; y: number; element: string }) => {
+        socket.to(`goal_${data.goalId}`).emit('user_cursor_move', {
+          userId: socket.userId,
+          userData: socket.userData,
+          x: data.x,
+          y: data.y,
+          element: data.element,
+          timestamp: new Date().toISOString(),
+        });
+      });
+
+      // Live selection sharing
+      socket.on('selection_change', (data: { goalId: number; selection: any }) => {
+        socket.to(`goal_${data.goalId}`).emit('user_selection_change', {
+          userId: socket.userId,
+          userData: socket.userData,
+          selection: data.selection,
+          timestamp: new Date().toISOString(),
+        });
+      });
+
+      // Real-time comments
+      socket.on('add_comment', async (data: { goalId: number; taskId?: number; comment: string }) => {
+        if (!socket.userId) return;
+
+        try {
+          const result = await sql`
+            INSERT INTO "TaskComment" (task_id, user_id, content, created_at)
+            VALUES (${data.taskId || null}, ${socket.userId}, ${data.comment}, NOW())
+            RETURNING id, content, created_at
+          `;
+
+          if (result.length > 0) {
+            const comment = result[0];
+            if (!comment) return;
+            
+            // Broadcast new comment
+            this.io.to(`goal_${data.goalId}`).emit('comment_added', {
+              commentId: comment.id,
+              content: comment.content,
+              taskId: data.taskId,
+              goalId: data.goalId,
+              authorId: socket.userId,
+              authorData: socket.userData,
+              timestamp: comment.created_at,
+            });
+          }
+        } catch (error) {
+          console.error('Error adding comment:', error);
+          socket.emit('error', { message: 'Failed to add comment' });
+        }
       });
 
       // Disconnect handling
@@ -383,6 +541,75 @@ export class RealtimeService {
   // Get socket.io instance for external use
   public getIO(): SocketIOServer {
     return this.io;
+  }
+
+  // Send real-time plan adaptation notification
+  public sendPlanAdaptationNotification(userId: number, goalId: number, changes: {
+    createdIds: string[];
+    updatedIds: string[];
+    archivedIds: string[];
+  }) {
+    this.io.to(`user_${userId}`).emit('plan_adapted', {
+      goalId,
+      changes,
+      timestamp: new Date().toISOString(),
+    });
+  }
+
+  // Send real-time AI insights
+  public sendAIInsights(userId: number, insights: {
+    productivityScore: number;
+    recommendations: string[];
+    patterns: any;
+  }) {
+    this.io.to(`user_${userId}`).emit('ai_insights', {
+      insights,
+      timestamp: new Date().toISOString(),
+    });
+  }
+
+  // Send real-time deadline warnings
+  public sendDeadlineWarning(userId: number, goalId: number, daysRemaining: number) {
+    this.io.to(`user_${userId}`).emit('deadline_warning', {
+      goalId,
+      daysRemaining,
+      message: `Only ${daysRemaining} days left to complete your goal!`,
+      timestamp: new Date().toISOString(),
+    });
+  }
+
+  // Send real-time streak updates
+  public sendStreakUpdate(userId: number, streak: number, type: 'daily' | 'weekly' | 'monthly') {
+    this.io.to(`user_${userId}`).emit('streak_update', {
+      streak,
+      type,
+      message: `Amazing! You've maintained a ${type} streak of ${streak} days!`,
+      timestamp: new Date().toISOString(),
+    });
+  }
+
+  // Get users currently viewing a goal
+  public getGoalViewers(goalId: number): number[] {
+    const room = this.io.sockets.adapter.rooms.get(`goal_${goalId}`);
+    if (!room) return [];
+    
+    const viewers: number[] = [];
+    for (const socketId of room) {
+      const socket = this.userSockets.get(socketId);
+      if (socket?.userId) {
+        viewers.push(socket.userId);
+      }
+    }
+    return viewers;
+  }
+
+  // Send presence updates
+  public sendPresenceUpdate(goalId: number, userId: number, status: 'online' | 'away' | 'offline') {
+    this.io.to(`goal_${goalId}`).emit('user_presence_change', {
+      userId,
+      status,
+      timestamp: new Date().toISOString(),
+    });
   }
 }
 

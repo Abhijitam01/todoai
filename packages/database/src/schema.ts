@@ -1,125 +1,137 @@
-import { pgTable, text, timestamp, boolean, integer, uuid, jsonb, varchar } from 'drizzle-orm/pg-core';
+import { sqliteTable, text, integer, real } from 'drizzle-orm/sqlite-core';
 import { relations } from 'drizzle-orm';
+import { sql } from 'drizzle-orm';
+import { nanoid } from 'nanoid';
 
 // Users table
-export const users = pgTable('users', {
-  id: uuid('id').primaryKey().defaultRandom(),
-  email: varchar('email', { length: 255 }).notNull().unique(),
+export const users = sqliteTable('users', {
+  id: text('id').primaryKey().$defaultFn(() => nanoid()),
+  email: text('email').notNull().unique(),
   password: text('password').notNull(),
-  firstName: varchar('first_name', { length: 100 }),
-  lastName: varchar('last_name', { length: 100 }),
+  firstName: text('first_name'),
+  lastName: text('last_name'),
   avatar: text('avatar'),
-  isEmailVerified: boolean('is_email_verified').default(false),
+  isEmailVerified: integer('is_email_verified', { mode: 'boolean' }).notNull().default(false),
   emailVerificationToken: text('email_verification_token'),
   passwordResetToken: text('password_reset_token'),
-  passwordResetExpires: timestamp('password_reset_expires'),
-  lastLoginAt: timestamp('last_login_at'),
-  createdAt: timestamp('created_at').defaultNow().notNull(),
-  updatedAt: timestamp('updated_at').defaultNow().notNull(),
+  passwordResetExpires: integer('password_reset_expires', { mode: 'timestamp' }),
+  lastLoginAt: integer('last_login_at', { mode: 'timestamp' }),
+  createdAt: integer('created_at', { mode: 'timestamp' }).notNull().default(sql`CURRENT_TIMESTAMP`),
+  updatedAt: integer('updated_at', { mode: 'timestamp' }).notNull().default(sql`CURRENT_TIMESTAMP`),
 });
 
 // Goals table
-export const goals = pgTable('goals', {
-  id: uuid('id').primaryKey().defaultRandom(),
-  userId: uuid('user_id').notNull().references(() => users.id, { onDelete: 'cascade' }),
-  title: varchar('title', { length: 255 }).notNull(),
+export const goals = sqliteTable('goals', {
+  id: text('id').primaryKey().$defaultFn(() => nanoid()),
+  userId: text('user_id').notNull().references(() => users.id, { onDelete: 'cascade' }),
+  title: text('title').notNull(),
   description: text('description'),
-  category: varchar('category', { length: 100 }),
-  priority: varchar('priority', { length: 20 }).default('medium'), // low, medium, high, urgent
-  status: varchar('status', { length: 20 }).default('active'), // active, completed, paused, cancelled
-  targetDate: timestamp('target_date'),
-  completedAt: timestamp('completed_at'),
+  category: text('category'),
+  priority: text('priority').default('medium'), // low, medium, high, urgent
+  status: text('status').default('active'), // active, completed, paused, cancelled
+  targetDate: integer('target_date', { mode: 'timestamp' }),
+  completedAt: integer('completed_at', { mode: 'timestamp' }),
   progress: integer('progress').default(0), // 0-100
-  aiSuggestions: jsonb('ai_suggestions'), // Store AI-generated suggestions
-  tags: jsonb('tags'), // Array of tags
-  isArchived: boolean('is_archived').default(false),
-  createdAt: timestamp('created_at').defaultNow().notNull(),
-  updatedAt: timestamp('updated_at').defaultNow().notNull(),
+  aiSuggestions: text('ai_suggestions'), // JSON string
+  tags: text('tags'), // JSON array
+  isArchived: integer('is_archived', { mode: 'boolean' }).default(false),
+  createdAt: integer('created_at', { mode: 'timestamp' }).notNull().default(sql`CURRENT_TIMESTAMP`),
+  updatedAt: integer('updated_at', { mode: 'timestamp' }).notNull().default(sql`CURRENT_TIMESTAMP`),
 });
 
 // Tasks table
-export const tasks = pgTable('tasks', {
-  id: uuid('id').primaryKey().defaultRandom(),
-  userId: uuid('user_id').notNull().references(() => users.id, { onDelete: 'cascade' }),
-  goalId: uuid('goal_id').references(() => goals.id, { onDelete: 'set null' }),
-  title: varchar('title', { length: 255 }).notNull(),
+export const tasks = sqliteTable('tasks', {
+  id: text('id').primaryKey().$defaultFn(() => nanoid()),
+  userId: text('user_id').notNull().references(() => users.id, { onDelete: 'cascade' }),
+  goalId: text('goal_id').references(() => goals.id, { onDelete: 'cascade' }),
+  title: text('title').notNull(),
   description: text('description'),
-  priority: varchar('priority', { length: 20 }).default('medium'), // low, medium, high, urgent
-  status: varchar('status', { length: 20 }).default('pending'), // pending, in_progress, completed, cancelled
-  dueDate: timestamp('due_date'),
-  completedAt: timestamp('completed_at'),
+  priority: text('priority').default('medium'), // low, medium, high, urgent
+  status: text('status').default('pending'), // pending, in_progress, completed, cancelled
+  dueDate: integer('due_date', { mode: 'timestamp' }),
+  completedAt: integer('completed_at', { mode: 'timestamp' }),
   estimatedMinutes: integer('estimated_minutes'),
   actualMinutes: integer('actual_minutes'),
-  tags: jsonb('tags'), // Array of tags
-  dependencies: jsonb('dependencies'), // Array of task IDs this task depends on
-  isRecurring: boolean('is_recurring').default(false),
-  recurringPattern: jsonb('recurring_pattern'), // Store recurring pattern config
-  parentTaskId: uuid('parent_task_id'),
-  order: integer('order').default(0), // For ordering tasks
-  isArchived: boolean('is_archived').default(false),
-  createdAt: timestamp('created_at').defaultNow().notNull(),
-  updatedAt: timestamp('updated_at').defaultNow().notNull(),
+  tags: text('tags'), // JSON array
+  dependencies: text('dependencies'), // JSON array of task IDs
+  isRecurring: integer('is_recurring', { mode: 'boolean' }).default(false),
+  recurringPattern: text('recurring_pattern'), // daily, weekly, monthly
+  parentTaskId: text('parent_task_id'),
+  order: integer('order').default(0),
+  isArchived: integer('is_archived', { mode: 'boolean' }).default(false),
+  createdAt: integer('created_at', { mode: 'timestamp' }).notNull().default(sql`CURRENT_TIMESTAMP`),
+  updatedAt: integer('updated_at', { mode: 'timestamp' }).notNull().default(sql`CURRENT_TIMESTAMP`),
 });
 
-// Task comments/notes
-export const taskComments = pgTable('task_comments', {
-  id: uuid('id').primaryKey().defaultRandom(),
-  taskId: uuid('task_id').notNull().references(() => tasks.id, { onDelete: 'cascade' }),
-  userId: uuid('user_id').notNull().references(() => users.id, { onDelete: 'cascade' }),
+// Task comments table
+export const taskComments = sqliteTable('task_comments', {
+  id: text('id').primaryKey().$defaultFn(() => nanoid()),
+  taskId: text('task_id').notNull().references(() => tasks.id, { onDelete: 'cascade' }),
+  userId: text('user_id').notNull().references(() => users.id, { onDelete: 'cascade' }),
   content: text('content').notNull(),
-  createdAt: timestamp('created_at').defaultNow().notNull(),
-  updatedAt: timestamp('updated_at').defaultNow().notNull(),
+  createdAt: integer('created_at', { mode: 'timestamp' }).notNull().default(sql`CURRENT_TIMESTAMP`),
 });
 
-// Time tracking
-export const timeEntries = pgTable('time_entries', {
-  id: uuid('id').primaryKey().defaultRandom(),
-  userId: uuid('user_id').notNull().references(() => users.id, { onDelete: 'cascade' }),
-  taskId: uuid('task_id').references(() => tasks.id, { onDelete: 'cascade' }),
-  goalId: uuid('goal_id').references(() => goals.id, { onDelete: 'cascade' }),
-  description: text('description'),
-  startTime: timestamp('start_time').notNull(),
-  endTime: timestamp('end_time'),
+// Time entries table
+export const timeEntries = sqliteTable('time_entries', {
+  id: text('id').primaryKey().$defaultFn(() => nanoid()),
+  taskId: text('task_id').notNull().references(() => tasks.id, { onDelete: 'cascade' }),
+  userId: text('user_id').notNull().references(() => users.id, { onDelete: 'cascade' }),
+  startTime: integer('start_time', { mode: 'timestamp' }).notNull(),
+  endTime: integer('end_time', { mode: 'timestamp' }),
   duration: integer('duration'), // in minutes
-  isManual: boolean('is_manual').default(false), // true if manually added, false if tracked
-  createdAt: timestamp('created_at').defaultNow().notNull(),
-  updatedAt: timestamp('updated_at').defaultNow().notNull(),
+  description: text('description'),
+  createdAt: integer('created_at', { mode: 'timestamp' }).notNull().default(sql`CURRENT_TIMESTAMP`),
 });
 
-// User preferences and settings
-export const userSettings = pgTable('user_settings', {
-  id: uuid('id').primaryKey().defaultRandom(),
-  userId: uuid('user_id').notNull().references(() => users.id, { onDelete: 'cascade' }).unique(),
-  timezone: varchar('timezone', { length: 100 }).default('UTC'),
-  dateFormat: varchar('date_format', { length: 20 }).default('MM/DD/YYYY'),
-  timeFormat: varchar('time_format', { length: 10 }).default('12h'), // 12h or 24h
-  weekStartsOn: integer('week_starts_on').default(0), // 0 = Sunday, 1 = Monday
-  theme: varchar('theme', { length: 20 }).default('light'), // light, dark, auto
-  notifications: jsonb('notifications'), // Notification preferences
-  aiPreferences: jsonb('ai_preferences'), // AI-related preferences
-  createdAt: timestamp('created_at').defaultNow().notNull(),
-  updatedAt: timestamp('updated_at').defaultNow().notNull(),
+// User settings table
+export const userSettings = sqliteTable('user_settings', {
+  id: text('id').primaryKey().$defaultFn(() => nanoid()),
+  userId: text('user_id').notNull().references(() => users.id, { onDelete: 'cascade' }),
+  theme: text('theme').default('light'), // light, dark, auto
+  notifications: text('notifications'), // JSON object
+  timezone: text('timezone').default('UTC'),
+  language: text('language').default('en'),
+  createdAt: integer('created_at', { mode: 'timestamp' }).notNull().default(sql`CURRENT_TIMESTAMP`),
+  updatedAt: integer('updated_at', { mode: 'timestamp' }).notNull().default(sql`CURRENT_TIMESTAMP`),
 });
 
-// AI interactions and suggestions
-export const aiInteractions = pgTable('ai_interactions', {
-  id: uuid('id').primaryKey().defaultRandom(),
-  userId: uuid('user_id').notNull().references(() => users.id, { onDelete: 'cascade' }),
-  type: varchar('type', { length: 50 }).notNull(), // goal_planning, task_breakdown, productivity_insights, etc.
-  input: jsonb('input').notNull(), // User input/context
-  output: jsonb('output').notNull(), // AI response
-  metadata: jsonb('metadata'), // Additional metadata (model used, tokens, etc.)
-  createdAt: timestamp('created_at').defaultNow().notNull(),
+// AI interactions table
+export const aiInteractions = sqliteTable('ai_interactions', {
+  id: text('id').primaryKey().$defaultFn(() => nanoid()),
+  userId: text('user_id').notNull().references(() => users.id, { onDelete: 'cascade' }),
+  type: text('type').notNull(), // goal_creation, task_planning, suggestion, etc.
+  input: text('input').notNull(), // User input
+  output: text('output').notNull(), // AI response
+  model: text('model'), // GPT-4, Gemini, etc.
+  tokens: integer('tokens'),
+  metadata: text('metadata'), // JSON string
+  createdAt: integer('created_at', { mode: 'timestamp' }).notNull().default(sql`CURRENT_TIMESTAMP`),
 });
 
 // Refresh tokens for JWT
-export const refreshTokens = pgTable('refresh_tokens', {
-  id: uuid('id').primaryKey().defaultRandom(),
-  userId: uuid('user_id').notNull().references(() => users.id, { onDelete: 'cascade' }),
+export const refreshTokens = sqliteTable('refresh_tokens', {
+  id: text('id').primaryKey().$defaultFn(() => nanoid()),
+  userId: text('user_id').notNull().references(() => users.id, { onDelete: 'cascade' }),
   token: text('token').notNull().unique(),
-  expiresAt: timestamp('expires_at').notNull(),
-  isRevoked: boolean('is_revoked').default(false),
-  createdAt: timestamp('created_at').defaultNow().notNull(),
+  expiresAt: integer('expires_at', { mode: 'timestamp' }).notNull(),
+  isRevoked: integer('is_revoked', { mode: 'boolean' }).notNull().default(false),
+  createdAt: integer('created_at', { mode: 'timestamp' }).notNull().default(sql`CURRENT_TIMESTAMP`),
+});
+
+// Feedback table
+export const feedback = sqliteTable('feedback', {
+  id: text('id').primaryKey().$defaultFn(() => nanoid()),
+  email: text('email').notNull(),
+  love: text('love').notNull(),
+  want: text('want'),
+  changes: text('changes'),
+  pricing: text('pricing'),
+  rating: integer('rating'),
+  recommendation: integer('recommendation'),
+  source: text('source').notNull().default('website'),
+  createdAt: integer('created_at', { mode: 'timestamp' }).notNull().default(sql`CURRENT_TIMESTAMP`),
+  updatedAt: integer('updated_at', { mode: 'timestamp' }).notNull().default(sql`CURRENT_TIMESTAMP`),
 });
 
 // Define relations
@@ -130,6 +142,7 @@ export const usersRelations = relations(users, ({ many, one }) => ({
   taskComments: many(taskComments),
   settings: one(userSettings),
   aiInteractions: many(aiInteractions),
+  refreshTokens: many(refreshTokens),
 }));
 
 export const goalsRelations = relations(goals, ({ one, many }) => ({
@@ -138,7 +151,6 @@ export const goalsRelations = relations(goals, ({ one, many }) => ({
     references: [users.id],
   }),
   tasks: many(tasks),
-  timeEntries: many(timeEntries),
 }));
 
 export const tasksRelations = relations(tasks, ({ one, many }) => ({
@@ -152,6 +164,11 @@ export const tasksRelations = relations(tasks, ({ one, many }) => ({
   }),
   comments: many(taskComments),
   timeEntries: many(timeEntries),
+  parentTask: one(tasks, {
+    fields: [tasks.parentTaskId],
+    references: [tasks.id],
+  }),
+  subtasks: many(tasks),
 }));
 
 export const taskCommentsRelations = relations(taskComments, ({ one }) => ({
@@ -166,17 +183,13 @@ export const taskCommentsRelations = relations(taskComments, ({ one }) => ({
 }));
 
 export const timeEntriesRelations = relations(timeEntries, ({ one }) => ({
-  user: one(users, {
-    fields: [timeEntries.userId],
-    references: [users.id],
-  }),
   task: one(tasks, {
     fields: [timeEntries.taskId],
     references: [tasks.id],
   }),
-  goal: one(goals, {
-    fields: [timeEntries.goalId],
-    references: [goals.id],
+  user: one(users, {
+    fields: [timeEntries.userId],
+    references: [users.id],
   }),
 }));
 
@@ -211,4 +224,5 @@ export const schema = {
   userSettings,
   aiInteractions,
   refreshTokens,
-}; 
+  feedback,
+};

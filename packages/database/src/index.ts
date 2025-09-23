@@ -1,16 +1,13 @@
-import { drizzle } from 'drizzle-orm/postgres-js';
-import postgres from 'postgres';
+import { drizzle } from 'drizzle-orm/better-sqlite3';
+import { sql } from 'drizzle-orm';
+import Database from 'better-sqlite3';
 import * as schema from './schema';
 
 // Database configuration
-const databaseUrl = process.env.DATABASE_URL || 'postgresql://localhost:5432/todoai';
+const databaseUrl = process.env.DATABASE_URL || 'file:./dev.db';
 
-// Create postgres client
-const client = postgres(databaseUrl, {
-  max: 10,
-  idle_timeout: 20,
-  connect_timeout: 10,
-});
+// Create SQLite client
+const client = new Database(databaseUrl.replace('file:', ''));
 
 // Create drizzle instance
 export const db = drizzle(client, { schema });
@@ -24,7 +21,7 @@ export const dbUtils = {
   // Health check
   async healthCheck() {
     try {
-      await client`SELECT 1`;
+      client.prepare('SELECT 1').get();
       return { status: 'healthy', timestamp: new Date().toISOString() };
     } catch (error) {
       return { 
@@ -37,7 +34,7 @@ export const dbUtils = {
 
   // Close connection
   async close() {
-    await client.end();
+    client.close();
   },
 
   // Transaction wrapper
@@ -46,8 +43,7 @@ export const dbUtils = {
   },
 };
 
-// Export client for advanced use cases
-export { client };
+// Client is available internally but not exported due to type issues
 
 // Re-export drizzle utilities
 export { eq, and, or, desc, asc } from 'drizzle-orm' 

@@ -2,6 +2,7 @@ import { Request, Response, NextFunction } from 'express';
 import { db, tasks, goals } from '@todoai/database';
 import { eq, and, or, gte, lte } from 'drizzle-orm';
 import { tasksCompletedCounter } from '../app';
+import { goalQueue } from '../queues/goal.queue';
 
 // Helper: Validate task input
 function validateTaskInput(body: any) {
@@ -220,8 +221,19 @@ export const updateTask = async (req: Request, res: Response): Promise<void> => 
       data: updatedTask
     });
 
-    // TODO: Trigger plan adaptation if task status change affects schedule
-    // This will be implemented in the plan adaptation phase
+    // Trigger plan adaptation if task status change affects schedule
+    if (status && existingTask.goalId) {
+      try {
+        await goalQueue.add('adapt-plan', {
+          goalId: existingTask.goalId,
+          trigger: status === 'completed' ? 'task_completed' : 'task_status_changed',
+        });
+        console.log(`[Task Update] Plan adaptation queued for goal ${existingTask.goalId} due to task status change`);
+      } catch (error) {
+        console.error(`[Task Update] Failed to queue plan adaptation for goal ${existingTask.goalId}:`, error);
+        // Don't fail the request if adaptation queuing fails
+      }
+    }
 
   } catch (error) {
     console.error('Update task error:', error);

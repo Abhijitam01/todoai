@@ -1,20 +1,8 @@
 import { Router, Request, Response } from 'express';
 import { z } from 'zod';
-import { neon } from '@neondatabase/serverless';
+import { db } from '@todoai/database';
 
 const router = Router();
-
-// Database connection - lazy initialization
-let sql: any = null;
-const getSql = () => {
-  if (!sql) {
-    if (!process.env.DATABASE_URL) {
-      throw new Error('DATABASE_URL is not set. Please ensure you have a .env file with DATABASE_URL defined, and that dotenv is loaded in your test setup.');
-    }
-    sql = neon(process.env.DATABASE_URL);
-  }
-  return sql;
-};
 
 // Validation schema
 const WaitlistSchema = z.object({

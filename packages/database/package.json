@@ -13,22 +13,25 @@
     "lint": "eslint . --max-warnings 0",
     "type-check": "tsc --noEmit",
     "migrate": "drizzle-kit migrate",
-    "push": "drizzle-kit push:pg",
+    "push": "drizzle-kit push:sqlite",
     "studio": "drizzle-kit studio",
-    "generate": "drizzle-kit generate:pg",
+    "generate": "drizzle-kit generate:sqlite",
     "clean": "rm -rf dist"
   },
   "dependencies": {
-    "drizzle-orm": "^0.29.3",
     "@neondatabase/serverless": "^1.0.1",
+    "better-sqlite3": "^9.2.2",
+    "drizzle-orm": "^0.29.3",
+    "nanoid": "^5.1.6",
     "postgres": "^3.4.3",
     "zod": "^3.25.56"
   },
   "devDependencies": {
-    "drizzle-kit": "^0.20.14",
+    "@types/better-sqlite3": "^7.6.8",
     "@types/node": "^20.0.0",
+    "drizzle-kit": "^0.20.14",
+    "eslint": "^8.56.0",
     "tsup": "^8.0.0",
-    "typescript": "^5.0.0",
-    "eslint": "^8.56.0"
+    "typescript": "^5.0.0"
   }
-} 
+}

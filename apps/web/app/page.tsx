@@ -4,7 +4,7 @@ import { useAuthStore } from "@/lib/store/auth";
 import { useRouter } from "next/navigation";
 import { useEffect } from "react";
 import { Navigation } from "@/components/navigation"
-import { HeroSection } from "@/components/landing/hero-section"
+import { ModernHeroSection } from "@/components/landing/modern-hero-section"
 import { HowItWorks } from "@/components/landing/how-it-works"
 import { FeaturesSection } from "@/components/landing/features-section"
 import { WhyTodoAI } from "@/components/landing/why-todoai"
@@ -25,9 +25,9 @@ export default function LandingPage() {
   if (isAuthenticated) return null;
 
   return (
-    <main className="min-h-screen bg-[#0a0a0a] text-white">
+    <main className="min-h-screen bg-black text-white">
       <Navigation />
-      <HeroSection />
+      <ModernHeroSection />
       <HowItWorks />
       <FeaturesSection />
       <WhyTodoAI />

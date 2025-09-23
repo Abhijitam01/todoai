@@ -35,12 +35,21 @@ async function handlePlanAdaptation(job: Job<PlanAdaptationJobData, any>) {
  * This is where the logic from the original PRD for initial plan creation would go.
  */
 async function handlePlanGeneration(job: Job<PlanGenerationJobData, any>) {
-  const { goalId, goalName } = job.data;
+  const { goalId, goalName, duration_days, time_per_day_hours, skill_level } = job.data;
   console.log(`[GoalWorker] Handling 'generate-plan' job for goal: "${goalName}" (goalId: ${goalId})`);
-  // TODO: Implement the initial plan generation logic by calling a
-  // dedicated method in the planningService, similar to adaptPlan.
-  console.warn(`[GoalWorker] 'generate-plan' job handler is not yet implemented.`);
-  return { success: true, message: 'Job received, implementation pending.' };
+  
+  try {
+    const result = await planningService.generateInitialPlan(goalId, {
+      duration_days,
+      time_per_day_hours,
+      skill_level
+    });
+    console.log(`[GoalWorker] Finished 'generate-plan' job for goalId: ${goalId} with success: ${result.success}`);
+    return result;
+  } catch (error) {
+    console.error(`[GoalWorker] Error during 'generate-plan' for goalId: ${goalId}`, error);
+    throw error;
+  }
 }
 
 // --- Main Worker Process ---
