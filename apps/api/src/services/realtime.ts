@@ -252,12 +252,32 @@ export class RealtimeService {
         if (!socket.userId) return;
 
         try {
-          const result = await sql`
-            UPDATE "Goal" 
-            SET ${sql.raw(Object.keys(data.updates).map(key => `${key} = ${data.updates[key]}`).join(', '))}, updated_at = NOW()
-            WHERE id = ${data.goalId} AND user_id = ${socket.userId}
-            RETURNING id, title, description, status, progress
-          `;
+          // Build update object with only valid fields
+          const updateData: any = {
+            updatedAt: new Date()
+          };
+          
+          // Only update valid goal fields
+          const validFields = ['title', 'description', 'status', 'progress', 'targetDate'];
+          for (const [key, value] of Object.entries(data.updates)) {
+            if (validFields.includes(key)) {
+              updateData[key] = value;
+            }
+          }
+          
+          const result = await db.update(goals)
+            .set(updateData)
+            .where(and(
+              eq(goals.id, data.goalId),
+              eq(goals.userId, socket.userId)
+            ))
+            .returning({
+              id: goals.id,
+              title: goals.title,
+              description: goals.description,
+              status: goals.status,
+              progress: goals.progress
+            });
 
           if (result.length > 0) {
             const goal = result[0];
