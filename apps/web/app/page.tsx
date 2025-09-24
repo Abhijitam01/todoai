@@ -4,13 +4,16 @@ import { useAuthStore } from "@/lib/store/auth";
 import { useRouter } from "next/navigation";
 import { useEffect } from "react";
 import { Navigation } from "@/components/navigation"
-import { ModernHeroSection } from "@/components/landing/modern-hero-section"
+import { UltimateHeroSection } from "@/components/landing/ultimate-hero-section"
+import { FeaturesShowcase } from "@/components/landing/features-showcase"
+import { TestimonialsSection } from "@/components/landing/testimonials-section"
+import { PricingSection } from "@/components/landing/pricing-section"
 import { HowItWorks } from "@/components/landing/how-it-works"
 import { FeaturesSection } from "@/components/landing/features-section"
 import { WhyTodoAI } from "@/components/landing/why-todoai"
 import { FAQSection } from "@/components/landing/faq-section"
 import { FinalCTA } from "@/components/landing/final-cta"
-import { Footer } from "@/components/landing/footer"
+import { UltimateFooter } from "@/components/landing/ultimate-footer"
 
 export default function LandingPage() {
   const { isAuthenticated } = useAuthStore();
@@ -27,13 +30,16 @@ export default function LandingPage() {
   return (
     <main className="min-h-screen bg-black text-white">
       <Navigation />
-      <ModernHeroSection />
+      <UltimateHeroSection />
+      <FeaturesShowcase />
+      <TestimonialsSection />
+      <PricingSection />
       <HowItWorks />
       <FeaturesSection />
       <WhyTodoAI />
       <FAQSection />
       <FinalCTA />
-      <Footer />
+      <UltimateFooter />
     </main>
   )
 } 

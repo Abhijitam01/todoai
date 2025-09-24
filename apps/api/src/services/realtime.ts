@@ -327,11 +327,18 @@ export class RealtimeService {
         if (!socket.userId) return;
 
         try {
-          const result = await sql`
-            INSERT INTO "TaskComment" (task_id, user_id, content, created_at)
-            VALUES (${data.taskId || null}, ${socket.userId}, ${data.comment}, NOW())
-            RETURNING id, content, created_at
-          `;
+          const result = await db.insert(taskComments)
+            .values({
+              taskId: data.taskId || null,
+              userId: socket.userId,
+              content: data.comment,
+              createdAt: new Date()
+            })
+            .returning({
+              id: taskComments.id,
+              content: taskComments.content,
+              createdAt: taskComments.createdAt
+            });
 
           if (result.length > 0) {
             const comment = result[0];
@@ -376,25 +383,33 @@ export class RealtimeService {
   // Update goal progress based on completed tasks
   private async updateGoalProgress(goalId: number, userId: number) {
     try {
-      const stats = await sql`
-        SELECT 
-          COUNT(*) as total_tasks,
-          COUNT(CASE WHEN completed = true THEN 1 END) as completed_tasks
-        FROM "Task"
-        WHERE goal_id = ${goalId} AND user_id = ${userId}
-      `;
+      const stats = await db
+        .select({
+          total: sql<number>`COUNT(*)`,
+          completed: sql<number>`COUNT(CASE WHEN status = 'completed' THEN 1 END)`
+        })
+        .from(tasks)
+        .where(and(
+          eq(tasks.goalId, goalId.toString()),
+          eq(tasks.userId, userId.toString())
+        ));
 
       if (stats.length > 0) {
-        if (!stats[0]) return;
-        const total_tasks = stats[0]?.total_tasks ?? 0;
-        const completed_tasks = stats[0]?.completed_tasks ?? 0;
+        const stat = stats[0];
+        if (!stat) return;
+        const total_tasks = stat.total ?? 0;
+        const completed_tasks = stat.completed ?? 0;
         const progress = total_tasks > 0 ? Math.round((completed_tasks / total_tasks) * 100) : 0;
 
-        await sql`
-          UPDATE "Goal"
-          SET progress = ${progress}, updated_at = NOW()
-          WHERE id = ${goalId} AND user_id = ${userId}
-        `;
+        await db.update(goals)
+          .set({ 
+            progress,
+            updatedAt: new Date()
+          })
+          .where(and(
+            eq(goals.id, goalId.toString()),
+            eq(goals.userId, userId.toString())
+          ));
 
         // Broadcast updated progress
         this.io.to(`user_${userId}`).emit('goal_progress_updated', {
@@ -415,27 +430,27 @@ export class RealtimeService {
     if (!socket.userId) return;
 
     try {
-      const stats = await sql`
-        SELECT 
-          COUNT(DISTINCT g.id) as total_goals,
-          COUNT(DISTINCT CASE WHEN g.completed = true THEN g.id END) as completed_goals,
-          COUNT(DISTINCT t.id) as total_tasks,
-          COUNT(DISTINCT CASE WHEN t.completed = true THEN t.id END) as completed_tasks,
-          COUNT(DISTINCT CASE WHEN t.completed = true AND t.completed_at >= CURRENT_DATE THEN t.id END) as tasks_today
-        FROM "Goal" g
-        LEFT JOIN "Task" t ON g.id = t.goal_id
-        WHERE g.user_id = ${socket.userId}
-      `;
+      const stats = await db
+        .select({
+          totalGoals: sql<number>`COUNT(DISTINCT ${goals.id})`,
+          completedGoals: sql<number>`COUNT(DISTINCT CASE WHEN ${goals.status} = 'completed' THEN ${goals.id} END)`,
+          totalTasks: sql<number>`COUNT(DISTINCT ${tasks.id})`,
+          completedTasks: sql<number>`COUNT(DISTINCT CASE WHEN ${tasks.status} = 'completed' THEN ${tasks.id} END)`,
+          tasksToday: sql<number>`COUNT(DISTINCT CASE WHEN ${tasks.status} = 'completed' AND DATE(${tasks.completedAt}) = DATE('now') THEN ${tasks.id} END)`
+        })
+        .from(goals)
+        .leftJoin(tasks, eq(goals.id, tasks.goalId))
+        .where(eq(goals.userId, socket.userId.toString()));
 
       const userStats = stats[0];
       if (!userStats) return;
 
       socket.emit('user_stats', {
-        totalGoals: parseInt(userStats.total_goals ?? '0'),
-        completedGoals: parseInt(userStats.completed_goals ?? '0'),
-        totalTasks: parseInt(userStats.total_tasks ?? '0'),
-        completedTasks: parseInt(userStats.completed_tasks ?? '0'),
-        tasksCompletedToday: parseInt(userStats.tasks_today ?? '0'),
+        totalGoals: userStats.totalGoals ?? 0,
+        completedGoals: userStats.completedGoals ?? 0,
+        totalTasks: userStats.totalTasks ?? 0,
+        completedTasks: userStats.completedTasks ?? 0,
+        tasksCompletedToday: userStats.tasksToday ?? 0,
         timestamp: new Date().toISOString(),
       });
     } catch (error) {
@@ -449,20 +464,23 @@ export class RealtimeService {
       const achievements = [];
 
       // Get user's task completion stats
-      const stats = await sql`
-        SELECT 
-          COUNT(*) as total_completed,
-          COUNT(CASE WHEN completed_at >= CURRENT_DATE THEN 1 END) as completed_today,
-          COUNT(CASE WHEN completed_at >= CURRENT_DATE - INTERVAL '7 days' THEN 1 END) as completed_week
-        FROM "Task"
-        WHERE user_id = ${userId} AND completed = true
-      `;
+      const stats = await db
+        .select({
+          totalCompleted: sql<number>`COUNT(*)`,
+          completedToday: sql<number>`COUNT(CASE WHEN DATE(${tasks.completedAt}) = DATE('now') THEN 1 END)`,
+          completedWeek: sql<number>`COUNT(CASE WHEN ${tasks.completedAt} >= DATE('now', '-7 days') THEN 1 END)`
+        })
+        .from(tasks)
+        .where(and(
+          eq(tasks.userId, userId.toString()),
+          eq(tasks.status, 'completed')
+        ));
 
       const userStats = stats[0];
       if (!userStats) return;
-      const totalCompleted = parseInt(userStats.total_completed ?? '0');
-      const completedToday = parseInt(userStats.completed_today ?? '0');
-      const completedWeek = parseInt(userStats.completed_week ?? '0');
+      const totalCompleted = userStats.totalCompleted ?? 0;
+      const completedToday = userStats.completedToday ?? 0;
+      const completedWeek = userStats.completedWeek ?? 0;
 
       // Achievement: First task
       if (totalCompleted === 1) {
