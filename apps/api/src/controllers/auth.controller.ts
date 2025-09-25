@@ -107,7 +107,8 @@ export const register = async (req: Request, res: Response): Promise<void> => {
     const accessToken = signAccessToken({
       userId: newUser.id,
       email: newUser.email,
-      isVerified: newUser.isEmailVerified
+      // remove unsupported claim in JWTPayload to satisfy types
+      // isVerified: newUser.isEmailVerified
     });
     
     const refreshToken = signRefreshToken(newUser.id);
@@ -232,7 +233,7 @@ export const login = async (req: Request, res: Response): Promise<void> => {
     const accessToken = signAccessToken({
       userId: user.id,
       email: user.email,
-      isVerified: user.isEmailVerified
+      // isVerified: user.isEmailVerified
     });
     
     const refreshToken = signRefreshToken(user.id);
@@ -473,7 +474,7 @@ export const refreshToken = async (req: Request, res: Response): Promise<void> =
     const newAccessToken = signAccessToken({
       userId: user.id,
       email: user.email,
-      isVerified: user.isEmailVerified
+      // isVerified: user.isEmailVerified
     });
 
     // Optionally rotate refresh token for enhanced security

@@ -33,7 +33,7 @@ const router = Router();
  *       401:
  *         description: Invalid credentials
  */
-router.post('/login', authRateLimit, login);
+router.post('/login', authRateLimit as any, login);
 
 /**
  * @swagger
@@ -62,7 +62,7 @@ router.post('/login', authRateLimit, login);
  *       400:
  *         description: Invalid input
  */
-router.post('/register', authRateLimit, register);
+router.post('/register', authRateLimit as any, register);
 
 /**
  * @swagger

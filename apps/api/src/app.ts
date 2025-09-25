@@ -2,8 +2,7 @@ import express from 'express';
 import cors from 'cors';
 import helmet from 'helmet';
 import compression from 'compression';
-import { createServer } from 'http';
-import { Server } from 'socket.io';
+// Note: HTTP server and Socket.IO are initialized in server.ts
 import jwt from 'jsonwebtoken';
 import dotenv from 'dotenv';
 
@@ -31,18 +30,7 @@ import { RealtimeService, initializeRealTimeService } from './services/realtime'
 dotenv.config();
 
 const app = express();
-const server = createServer(app);
-
-// Initialize Socket.IO with legendary configuration
-const io = new Server(server, {
-  cors: {
-    origin: process.env.FRONTEND_URL || "http://localhost:3000",
-    credentials: true
-  },
-  transports: ['websocket', 'polling'],
-  pingTimeout: 60000,
-  pingInterval: 25000
-});
+// Socket.IO is initialized in server.ts and attached to the HTTP server
 
 // Legendary middleware stack
 app.use(helmet({
@@ -133,8 +121,7 @@ app.get('/', (req, res) => {
   });
 });
 
-// Initialize legendary real-time service
-export const realtimeService = initializeRealTimeService(io);
+// Real-time service is initialized in server.ts after Socket.IO is created
 
 // Legendary error handling
 app.use((err: any, req: express.Request, res: express.Response, next: express.NextFunction) => {
@@ -169,18 +156,6 @@ app.use('*', (req, res) => {
       timestamp: new Date().toISOString()
     }
   });
-});
-
-const PORT = process.env.PORT || 4000;
-
-server.listen(PORT, () => {
-  console.log(`
-🚀 LEGENDARY TodoAI API Server Running!
-📡 Port: ${PORT}
-🌐 Health: http://localhost:${PORT}/health
-⚡ Real-time: Socket.IO enabled
-🎯 Status: God-tier operational
-  `);
 });
 
 export default app; 

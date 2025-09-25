@@ -1,12 +1,27 @@
 import 'dotenv/config';
 import app from './app';
 import { createServer } from 'http';
+import { Server } from 'socket.io';
+import { initializeRealTimeService } from './services/realtime';
 
 const PORT = parseInt(process.env.PORT || '4000', 10);
 const HOST = process.env.HOST || '0.0.0.0';
 
 // Create HTTP server
 const server = createServer(app);
+
+// Initialize Socket.IO and realtime service only here to avoid duplicate listeners
+const io = new Server(server, {
+  cors: {
+    origin: process.env.FRONTEND_URL || 'http://localhost:3000',
+    credentials: true,
+  },
+  transports: ['websocket', 'polling'],
+  pingTimeout: 60000,
+  pingInterval: 25000,
+});
+
+initializeRealTimeService(io);
 
 // Graceful shutdown handling
 const gracefulShutdown = (signal: string) => {
