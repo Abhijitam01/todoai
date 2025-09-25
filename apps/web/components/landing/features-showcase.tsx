@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useRef } from "react";
 import { motion, useInView } from "framer-motion";
 import { GlassCard } from "@/components/ui/aceternity/glass-card";
 import { ModernButton } from "@/components/ui/aceternity/modern-button";
@@ -79,7 +79,8 @@ const benefits = [
 
 export function FeaturesShowcase() {
   const [activeFeature, setActiveFeature] = useState(0);
-  const [ref, inView] = useInView({ threshold: 0.1, triggerOnce: true });
+  const ref = useRef<HTMLDivElement | null>(null);
+  const inView = useInView(ref, { amount: 0.1, once: true });
 
   return (
     <section className="py-20 bg-black text-white relative overflow-hidden">

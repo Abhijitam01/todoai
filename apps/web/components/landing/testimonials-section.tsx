@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useRef } from "react";
 import { motion, useInView } from "framer-motion";
 import { GlassCard } from "@/components/ui/aceternity/glass-card";
 import { ModernButton } from "@/components/ui/aceternity/modern-button";
@@ -85,7 +85,8 @@ const achievements = [
 
 export function TestimonialsSection() {
   const [currentTestimonial, setCurrentTestimonial] = useState(0);
-  const [ref, inView] = useInView({ threshold: 0.1, triggerOnce: true });
+  const ref = useRef<HTMLDivElement | null>(null);
+  const inView = useInView(ref, { amount: 0.1, once: true });
 
   const nextTestimonial = () => {
     setCurrentTestimonial((prev) => (prev + 1) % testimonials.length);

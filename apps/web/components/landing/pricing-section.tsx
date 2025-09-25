@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useRef } from "react";
 import { motion, useInView } from "framer-motion";
 import { GlassCard } from "@/components/ui/aceternity/glass-card";
 import { ModernButton } from "@/components/ui/aceternity/modern-button";
@@ -100,7 +100,8 @@ const features = [
 
 export function PricingSection() {
   const [isAnnual, setIsAnnual] = useState(true);
-  const [ref, inView] = useInView({ threshold: 0.1, triggerOnce: true });
+  const ref = useRef<HTMLDivElement | null>(null);
+  const inView = useInView(ref, { amount: 0.1, once: true });
 
   const getPrice = (basePrice: string) => {
     if (basePrice === "$0") return "$0";
