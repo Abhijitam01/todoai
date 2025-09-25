@@ -1,5 +1,4 @@
 import Redis from 'ioredis';
-import { config } from '@todoai/config';
 
 export interface CacheOptions {
   ttl?: number; // Time to live in seconds
@@ -7,31 +6,60 @@ export interface CacheOptions {
 }
 
 export class CacheService {
-  private redis: Redis;
+  private redis: Redis | null = null;
   private defaultTTL = 3600; // 1 hour
+  private enabled = false;
 
   constructor() {
-    this.redis = new Redis({
-      host: config.REDIS_HOST || 'localhost',
-      port: config.REDIS_PORT || 6379,
-      password: config.REDIS_PASSWORD,
-      retryDelayOnFailover: 100,
-      maxRetriesPerRequest: 3,
-    });
+    // Enable via env; default off to avoid noisy errors in dev if Redis isn't running
+    const envEnabled = (process.env.CACHE_ENABLED || '').toLowerCase() === 'true';
+    this.enabled = envEnabled;
 
-    this.redis.on('error', (error) => {
-      console.error('Redis connection error:', error);
-    });
+    if (!this.enabled) {
+      console.log('[Cache] Disabled (set CACHE_ENABLED=true to enable)');
+      return;
+    }
 
-    this.redis.on('connect', () => {
-      console.log('✅ Connected to Redis cache');
-    });
+    try {
+      const baseOptions: any = {
+        host: process.env.REDIS_HOST || '127.0.0.1',
+        port: Number(process.env.REDIS_PORT || 6379),
+        lazyConnect: true,
+        enableOfflineQueue: false,
+        maxRetriesPerRequest: 1,
+        retryStrategy: (times: number) => Math.min(times * 100, 1000),
+      };
+      if (process.env.REDIS_PASSWORD) {
+        baseOptions.password = process.env.REDIS_PASSWORD as string;
+      }
+      this.redis = new Redis(baseOptions);
+
+      this.redis.on('error', (error) => {
+        console.warn('[Cache] Redis connection error:', error?.message || error);
+      });
+
+      this.redis.on('connect', () => {
+        console.log('✅ Connected to Redis cache');
+      });
+
+      // Attempt connection, but gracefully disable on failure
+      this.redis.connect().catch((err) => {
+        console.warn('[Cache] Failed to connect. Cache will be disabled. Reason:', err?.message || err);
+        this.enabled = false;
+        this.redis = null;
+      });
+    } catch (err) {
+      console.warn('[Cache] Initialization failed. Disabling cache. Reason:', (err as any)?.message || err);
+      this.enabled = false;
+      this.redis = null;
+    }
   }
 
   /**
    * Get a value from cache
    */
   async get<T>(key: string): Promise<T | null> {
+    if (!this.enabled || !this.redis) return null;
     try {
       const value = await this.redis.get(key);
       return value ? JSON.parse(value) : null;
@@ -45,6 +73,7 @@ export class CacheService {
    * Set a value in cache
    */
   async set(key: string, value: any, options: CacheOptions = {}): Promise<boolean> {
+    if (!this.enabled || !this.redis) return false;
     try {
       const ttl = options.ttl || this.defaultTTL;
       const serializedValue = JSON.stringify(value);
@@ -66,6 +95,7 @@ export class CacheService {
    * Delete a value from cache
    */
   async delete(key: string): Promise<boolean> {
+    if (!this.enabled || !this.redis) return false;
     try {
       const result = await this.redis.del(key);
       return result > 0;
@@ -79,6 +109,7 @@ export class CacheService {
    * Delete multiple keys with pattern
    */
   async deletePattern(pattern: string): Promise<number> {
+    if (!this.enabled || !this.redis) return 0;
     try {
       const keys = await this.redis.keys(pattern);
       if (keys.length === 0) return 0;
@@ -95,6 +126,7 @@ export class CacheService {
    * Check if key exists
    */
   async exists(key: string): Promise<boolean> {
+    if (!this.enabled || !this.redis) return false;
     try {
       const result = await this.redis.exists(key);
       return result === 1;
@@ -112,6 +144,9 @@ export class CacheService {
     fetcher: () => Promise<T>,
     options: CacheOptions = {}
   ): Promise<T> {
+    if (!this.enabled || !this.redis) {
+      return await fetcher();
+    }
     try {
       // Try to get from cache first
       const cached = await this.get<T>(key);
@@ -134,6 +169,7 @@ export class CacheService {
    * Invalidate cache for a user
    */
   async invalidateUser(userId: string): Promise<void> {
+    if (!this.enabled || !this.redis) return;
     try {
       await this.deletePattern(`user:${userId}:*`);
       await this.deletePattern(`goals:${userId}:*`);
@@ -147,6 +183,7 @@ export class CacheService {
    * Invalidate cache for a specific goal
    */
   async invalidateGoal(goalId: string): Promise<void> {
+    if (!this.enabled || !this.redis) return;
     try {
       await this.deletePattern(`goal:${goalId}:*`);
       await this.deletePattern(`tasks:goal:${goalId}:*`);
@@ -163,6 +200,9 @@ export class CacheService {
     memory: any;
     keys: number;
   }> {
+    if (!this.enabled || !this.redis) {
+      return { connected: false, memory: null, keys: 0 };
+    }
     try {
       const info = await this.redis.info('memory');
       const keys = await this.redis.dbsize();
@@ -182,14 +222,18 @@ export class CacheService {
     }
   }
 
-  private parseMemoryInfo(info: string): any {
+  private parseMemoryInfo(info: string): Record<string, string> {
     const lines = info.split('\r\n');
-    const memory: any = {};
+    const memory: Record<string, string> = {};
     
     lines.forEach(line => {
       if (line.includes(':')) {
-        const [key, value] = line.split(':');
-        memory[key] = value;
+        const parts = line.split(':');
+        if (parts.length >= 2) {
+          const key = parts[0] as string;
+          const value = parts.slice(1).join(':');
+          memory[key] = value;
+        }
       }
     });
     
@@ -200,6 +244,7 @@ export class CacheService {
    * Close the Redis connection
    */
   async close(): Promise<void> {
+    if (!this.redis) return;
     try {
       await this.redis.quit();
     } catch (error) {
