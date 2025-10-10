@@ -1,7 +1,7 @@
 "use client";
 
-import { ModernDashboard } from "@/components/dashboard/modern-dashboard";
+import { NotionDashboard } from "@/components/dashboard/notion-dashboard";
 
 export default function DashboardPage() {
-  return <ModernDashboard />;
+  return <NotionDashboard />;
 } 
