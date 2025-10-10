@@ -4,6 +4,7 @@ import React, { useState, useEffect } from "react";
 import { NotionSidebar } from "./notion-sidebar";
 import { NotionEditor } from "../editor/notion-editor";
 import { NotionDatabase } from "../database/notion-database";
+import { FeatureNavigator } from "../navigation/feature-navigator";
 import { 
   Search, 
   Command, 
@@ -230,6 +231,9 @@ export function NotionWorkspace({ initialPage = "dashboard" }: NotionWorkspacePr
 
   return (
     <div className="flex h-screen bg-notion-gray-50">
+      {/* Feature Navigator */}
+      <FeatureNavigator />
+      
       {/* Sidebar */}
       <NotionSidebar 
         collapsed={sidebarCollapsed}

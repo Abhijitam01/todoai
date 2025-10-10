@@ -1,7 +1,7 @@
 "use client";
 
-import { NotionWorkspace } from "@/components/layout/notion-workspace";
+import { NotionIntegratedWorkspace } from "@/components/integration/notion-integrated-workspace";
 
 export default function DashboardPage() {
-  return <NotionWorkspace initialPage="dashboard" />;
+  return <NotionIntegratedWorkspace initialPage="dashboard" />;
 } 
