@@ -246,13 +246,37 @@ export class CacheService {
   async close(): Promise<void> {
     if (!this.redis) return;
     try {
+      // Remove all event listeners to prevent memory leaks
+      this.redis.removeAllListeners();
       await this.redis.quit();
+      this.redis = null;
+      this.enabled = false;
+      console.log('[Cache] Connection closed and cleaned up');
     } catch (error) {
       console.error('Cache close error:', error);
+      // Force cleanup even if quit fails
+      if (this.redis) {
+        this.redis.removeAllListeners();
+        this.redis.disconnect();
+        this.redis = null;
+        this.enabled = false;
+      }
     }
   }
 }
 
 // Export singleton instance
 export const cacheService = new CacheService();
+
+// Graceful shutdown handling for cache service
+process.on('SIGINT', async () => {
+  console.log('🛑 Shutting down cache service...');
+  await cacheService.close();
+});
+
+process.on('SIGTERM', async () => {
+  console.log('🛑 Shutting down cache service...');
+  await cacheService.close();
+});
+
 export default cacheService;

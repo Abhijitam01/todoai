@@ -54,6 +54,11 @@ const goalWorker = new Worker('goal-queue', async (job) => {
     host: process.env.REDIS_HOST || 'localhost',
     port: parseInt(process.env.REDIS_PORT || '6379'),
   },
+  // Add connection error handling
+  settings: {
+    stalledInterval: 30 * 1000,
+    maxStalledCount: 1,
+  },
 });
 
 // Worker event handlers
@@ -67,6 +72,37 @@ goalWorker.on('failed', (job, err) => {
 
 goalWorker.on('error', (err) => {
   console.error('🚨 Goal worker error:', err);
+});
+
+// Handle Redis connection errors gracefully
+goalWorker.on('connectionError', (err) => {
+  console.error('🚨 Redis connection error in worker:', err);
+  // Don't exit the process, let BullMQ handle reconnection
+});
+
+// Graceful shutdown handling
+process.on('SIGINT', async () => {
+  console.log('🛑 Received SIGINT, shutting down worker gracefully...');
+  try {
+    await goalWorker.close();
+    console.log('✅ Worker closed successfully');
+    process.exit(0);
+  } catch (error) {
+    console.error('❌ Error closing worker:', error);
+    process.exit(1);
+  }
+});
+
+process.on('SIGTERM', async () => {
+  console.log('🛑 Received SIGTERM, shutting down worker gracefully...');
+  try {
+    await goalWorker.close();
+    console.log('✅ Worker closed successfully');
+    process.exit(0);
+  } catch (error) {
+    console.error('❌ Error closing worker:', error);
+    process.exit(1);
+  }
 });
 
 console.log('🚀 Goal worker started and listening for jobs...');

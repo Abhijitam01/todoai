@@ -123,26 +123,8 @@ app.get('/', (req, res) => {
 
 // Real-time service is initialized in server.ts after Socket.IO is created
 
-// Legendary error handling
-app.use((err: any, req: express.Request, res: express.Response, next: express.NextFunction) => {
-  console.error('🔥 Legendary Error Handler:', err);
-  
-  const errorResponse = {
-    success: false,
-    error: {
-      message: err.message || 'An unexpected error occurred',
-      code: err.code || 'INTERNAL_ERROR',
-      timestamp: new Date().toISOString(),
-      requestId: req.headers['x-request-id'] || Math.random().toString(36).substring(7)
-    }
-  };
-
-  const statusCode = err.statusCode || err.status || 500;
-  res.status(statusCode).json(errorResponse);
-
-  // Increment apiErrorCounter
-  apiErrorCounter.inc();
-});
+// Use the centralized error handler from middleware
+app.use(errorHandler);
 
 // 404 handler
 app.use('*', (req, res) => {
