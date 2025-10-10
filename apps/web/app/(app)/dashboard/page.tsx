@@ -1,7 +1,7 @@
 "use client";
 
-import { NotionDashboard } from "@/components/dashboard/notion-dashboard";
+import { NotionWorkspace } from "@/components/layout/notion-workspace";
 
 export default function DashboardPage() {
-  return <NotionDashboard />;
+  return <NotionWorkspace initialPage="dashboard" />;
 } 

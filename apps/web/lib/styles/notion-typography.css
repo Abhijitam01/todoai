@@ -1,0 +1,294 @@
+/* Notion-Inspired Typography System for TodoAI */
+
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+
+:root {
+  /* Font Families */
+  --font-notion: 'Inter', ui-sans-serif, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+  --font-notion-mono: ui-monospace, SFMono-Regular, 'SF Mono', Consolas, 'Liberation Mono', Menlo, monospace;
+
+  /* Font Sizes - Notion Scale */
+  --text-notion-xs: 0.6875rem;    /* 11px */
+  --text-notion-sm: 0.75rem;      /* 12px */
+  --text-notion-base: 0.875rem;   /* 14px */
+  --text-notion-lg: 1rem;         /* 16px */
+  --text-notion-xl: 1.125rem;     /* 18px */
+  --text-notion-2xl: 1.25rem;     /* 20px */
+  --text-notion-3xl: 1.5rem;      /* 24px */
+  --text-notion-4xl: 2rem;        /* 32px */
+  --text-notion-5xl: 2.5rem;      /* 40px */
+
+  /* Line Heights */
+  --leading-notion-tight: 1.25;
+  --leading-notion-snug: 1.375;
+  --leading-notion-normal: 1.5;
+  --leading-notion-relaxed: 1.625;
+  --leading-notion-loose: 2;
+
+  /* Font Weights */
+  --font-notion-light: 300;
+  --font-notion-normal: 400;
+  --font-notion-medium: 500;
+  --font-notion-semibold: 600;
+  --font-notion-bold: 700;
+
+  /* Letter Spacing */
+  --tracking-notion-tight: -0.025em;
+  --tracking-notion-normal: 0;
+  --tracking-notion-wide: 0.025em;
+}
+
+/* Base Typography Styles */
+.font-notion {
+  font-family: var(--font-notion);
+}
+
+.font-notion-mono {
+  font-family: var(--font-notion-mono);
+}
+
+/* Text Sizes */
+.text-notion-xs {
+  font-size: var(--text-notion-xs);
+  line-height: var(--leading-notion-tight);
+}
+
+.text-notion-sm {
+  font-size: var(--text-notion-sm);
+  line-height: var(--leading-notion-tight);
+}
+
+.text-notion-base {
+  font-size: var(--text-notion-base);
+  line-height: var(--leading-notion-normal);
+}
+
+.text-notion-lg {
+  font-size: var(--text-notion-lg);
+  line-height: var(--leading-notion-normal);
+}
+
+.text-notion-xl {
+  font-size: var(--text-notion-xl);
+  line-height: var(--leading-notion-snug);
+}
+
+.text-notion-2xl {
+  font-size: var(--text-notion-2xl);
+  line-height: var(--leading-notion-snug);
+}
+
+.text-notion-3xl {
+  font-size: var(--text-notion-3xl);
+  line-height: var(--leading-notion-tight);
+}
+
+.text-notion-4xl {
+  font-size: var(--text-notion-4xl);
+  line-height: var(--leading-notion-tight);
+}
+
+.text-notion-5xl {
+  font-size: var(--text-notion-5xl);
+  line-height: var(--leading-notion-tight);
+}
+
+/* Font Weights */
+.font-notion-light { font-weight: var(--font-notion-light); }
+.font-notion-normal { font-weight: var(--font-notion-normal); }
+.font-notion-medium { font-weight: var(--font-notion-medium); }
+.font-notion-semibold { font-weight: var(--font-notion-semibold); }
+.font-notion-bold { font-weight: var(--font-notion-bold); }
+
+/* Notion-Specific Text Styles */
+
+/* Page Titles */
+.notion-page-title {
+  font-size: var(--text-notion-4xl);
+  font-weight: var(--font-notion-bold);
+  line-height: var(--leading-notion-tight);
+  color: var(--notion-text-default);
+  margin: 0;
+}
+
+/* Headings */
+.notion-h1 {
+  font-size: var(--text-notion-3xl);
+  font-weight: var(--font-notion-bold);
+  line-height: var(--leading-notion-tight);
+  color: var(--notion-text-default);
+  margin: 0 0 0.5rem 0;
+}
+
+.notion-h2 {
+  font-size: var(--text-notion-2xl);
+  font-weight: var(--font-notion-semibold);
+  line-height: var(--leading-notion-snug);
+  color: var(--notion-text-default);
+  margin: 0 0 0.5rem 0;
+}
+
+.notion-h3 {
+  font-size: var(--text-notion-xl);
+  font-weight: var(--font-notion-semibold);
+  line-height: var(--leading-notion-snug);
+  color: var(--notion-text-default);
+  margin: 0 0 0.5rem 0;
+}
+
+.notion-h4 {
+  font-size: var(--text-notion-lg);
+  font-weight: var(--font-notion-medium);
+  line-height: var(--leading-notion-normal);
+  color: var(--notion-text-default);
+  margin: 0 0 0.5rem 0;
+}
+
+/* Body Text */
+.notion-body {
+  font-size: var(--text-notion-base);
+  font-weight: var(--font-notion-normal);
+  line-height: var(--leading-notion-normal);
+  color: var(--notion-text-default);
+  margin: 0 0 1rem 0;
+}
+
+.notion-body-small {
+  font-size: var(--text-notion-sm);
+  font-weight: var(--font-notion-normal);
+  line-height: var(--leading-notion-normal);
+  color: var(--notion-text-gray);
+  margin: 0 0 0.5rem 0;
+}
+
+/* Captions and Metadata */
+.notion-caption {
+  font-size: var(--text-notion-xs);
+  font-weight: var(--font-notion-normal);
+  line-height: var(--leading-notion-tight);
+  color: var(--notion-text-light);
+  margin: 0;
+}
+
+.notion-label {
+  font-size: var(--text-notion-xs);
+  font-weight: var(--font-notion-medium);
+  line-height: var(--leading-notion-tight);
+  color: var(--notion-text-gray);
+  text-transform: uppercase;
+  letter-spacing: var(--tracking-notion-wide);
+  margin: 0;
+}
+
+/* Interactive Text */
+.notion-link {
+  color: var(--todoai-primary);
+  text-decoration: none;
+  cursor: pointer;
+  transition: color 0.15s ease;
+}
+
+.notion-link:hover {
+  color: var(--todoai-primary-hover);
+  text-decoration: underline;
+}
+
+.notion-button-text {
+  font-size: var(--text-notion-base);
+  font-weight: var(--font-notion-medium);
+  line-height: var(--leading-notion-normal);
+  color: var(--notion-text-default);
+}
+
+/* Code and Monospace */
+.notion-code {
+  font-family: var(--font-notion-mono);
+  font-size: var(--text-notion-sm);
+  background-color: var(--notion-gray-100);
+  color: var(--notion-text-default);
+  padding: 0.125rem 0.25rem;
+  border-radius: 0.25rem;
+  border: 1px solid var(--notion-border);
+}
+
+.notion-code-block {
+  font-family: var(--font-notion-mono);
+  font-size: var(--text-notion-sm);
+  background-color: var(--notion-gray-100);
+  color: var(--notion-text-default);
+  padding: 1rem;
+  border-radius: 0.5rem;
+  border: 1px solid var(--notion-border);
+  overflow-x: auto;
+  white-space: pre;
+}
+
+/* Lists */
+.notion-list {
+  font-size: var(--text-notion-base);
+  font-weight: var(--font-notion-normal);
+  line-height: var(--leading-notion-normal);
+  color: var(--notion-text-default);
+  margin: 0 0 0.5rem 0;
+  padding-left: 1.5rem;
+}
+
+.notion-list-item {
+  margin: 0 0 0.25rem 0;
+}
+
+/* Quotes */
+.notion-quote {
+  font-size: var(--text-notion-lg);
+  font-weight: var(--font-notion-normal);
+  line-height: var(--leading-notion-relaxed);
+  color: var(--notion-text-gray);
+  font-style: italic;
+  border-left: 4px solid var(--notion-border);
+  padding-left: 1rem;
+  margin: 0 0 1rem 0;
+}
+
+/* Placeholder Text */
+.notion-placeholder {
+  color: var(--notion-text-placeholder);
+  font-style: italic;
+}
+
+/* Text Selection */
+::selection {
+  background-color: var(--todoai-primary-light);
+  color: var(--notion-text-default);
+}
+
+/* Responsive Typography */
+@media (max-width: 768px) {
+  .notion-page-title {
+    font-size: var(--text-notion-3xl);
+  }
+  
+  .notion-h1 {
+    font-size: var(--text-notion-2xl);
+  }
+  
+  .notion-h2 {
+    font-size: var(--text-notion-xl);
+  }
+  
+  .notion-h3 {
+    font-size: var(--text-notion-lg);
+  }
+}
+
+/* Dark Mode Typography Adjustments */
+[data-theme="dark"] {
+  .notion-code {
+    background-color: var(--notion-gray-100);
+    color: var(--notion-text-default);
+  }
+  
+  .notion-code-block {
+    background-color: var(--notion-gray-100);
+    color: var(--notion-text-default);
+  }
+}

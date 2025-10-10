@@ -1,0 +1,146 @@
+/* Notion-Inspired Color System for TodoAI */
+
+:root {
+  /* Light Mode Colors */
+  --notion-white: #FFFFFF;
+  --notion-gray-50: #FAFAFA;
+  --notion-gray-100: #F5F5F5;
+  --notion-gray-200: #EEEEEE;
+  --notion-gray-300: #E0E0E0;
+  --notion-gray-400: #BDBDBD;
+  --notion-gray-500: #9E9E9E;
+  --notion-gray-600: #757575;
+  --notion-gray-700: #616161;
+  --notion-gray-800: #424242;
+  --notion-gray-900: #212121;
+
+  /* Notion Text Colors */
+  --notion-text-default: #37352F;
+  --notion-text-gray: #787774;
+  --notion-text-light: #9B9A97;
+  --notion-text-placeholder: #C1C1C0;
+
+  /* TodoAI Brand Colors */
+  --todoai-primary: #2563EB;
+  --todoai-primary-hover: #1D4ED8;
+  --todoai-primary-light: #DBEAFE;
+  
+  /* Status Colors */
+  --todoai-success: #059669;
+  --todoai-success-light: #D1FAE5;
+  --todoai-warning: #D97706;
+  --todoai-warning-light: #FED7AA;
+  --todoai-error: #DC2626;
+  --todoai-error-light: #FEE2E2;
+
+  /* Notion Accent Colors */
+  --notion-blue: #2383E2;
+  --notion-blue-light: #E3F2FD;
+  --notion-purple: #9065B0;
+  --notion-purple-light: #F3E5F5;
+  --notion-green: #0F7B0F;
+  --notion-green-light: #E8F5E8;
+  --notion-yellow: #E9AB01;
+  --notion-yellow-light: #FFFBF0;
+  --notion-orange: #D9730D;
+  --notion-orange-light: #FFF4E6;
+  --notion-red: #E16259;
+  --notion-red-light: #FFEBEE;
+  --notion-pink: #E155B7;
+  --notion-pink-light: #FCE4EC;
+  --notion-brown: #64473A;
+  --notion-brown-light: #F5F5DC;
+
+  /* Interactive States */
+  --notion-hover: rgba(55, 53, 47, 0.08);
+  --notion-hover-light: rgba(55, 53, 47, 0.03);
+  --notion-selected: rgba(55, 53, 47, 0.16);
+  --notion-border: rgba(227, 226, 224, 0.5);
+  --notion-border-hover: rgba(227, 226, 224, 0.8);
+
+  /* Shadows */
+  --notion-shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+  --notion-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06);
+  --notion-shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+  --notion-shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+
+  /* Focus States */
+  --notion-focus: 0 0 0 2px rgba(37, 99, 235, 0.5);
+  --notion-focus-ring: 2px solid var(--todoai-primary);
+}
+
+/* Dark Mode Colors */
+[data-theme="dark"] {
+  --notion-white: #191919;
+  --notion-gray-50: #2F3437;
+  --notion-gray-100: #373C3F;
+  --notion-gray-200: #3C4347;
+  --notion-gray-300: #454B50;
+  --notion-gray-400: #5C636A;
+  --notion-gray-500: #6B7280;
+  --notion-gray-600: #9CA3AF;
+  --notion-gray-700: #D1D5DB;
+  --notion-gray-800: #E5E7EB;
+  --notion-gray-900: #F9FAFB;
+
+  /* Dark Mode Text Colors */
+  --notion-text-default: #FFFFFF;
+  --notion-text-gray: #B4BEC9;
+  --notion-text-light: #9CA3AF;
+  --notion-text-placeholder: #6B7280;
+
+  /* Dark Mode Interactive States */
+  --notion-hover: rgba(255, 255, 255, 0.08);
+  --notion-hover-light: rgba(255, 255, 255, 0.03);
+  --notion-selected: rgba(255, 255, 255, 0.16);
+  --notion-border: rgba(255, 255, 255, 0.13);
+  --notion-border-hover: rgba(255, 255, 255, 0.23);
+
+  /* Dark Mode Shadows */
+  --notion-shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.3);
+  --notion-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.4), 0 1px 2px 0 rgba(0, 0, 0, 0.3);
+  --notion-shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.4), 0 2px 4px -1px rgba(0, 0, 0, 0.3);
+  --notion-shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.4), 0 4px 6px -2px rgba(0, 0, 0, 0.3);
+}
+
+/* Utility Classes */
+.text-notion-default { color: var(--notion-text-default); }
+.text-notion-gray { color: var(--notion-text-gray); }
+.text-notion-light { color: var(--notion-text-light); }
+.text-notion-placeholder { color: var(--notion-text-placeholder); }
+
+.bg-notion-white { background-color: var(--notion-white); }
+.bg-notion-gray-50 { background-color: var(--notion-gray-50); }
+.bg-notion-gray-100 { background-color: var(--notion-gray-100); }
+.bg-notion-gray-200 { background-color: var(--notion-gray-200); }
+
+.border-notion { border-color: var(--notion-border); }
+.border-notion-hover { border-color: var(--notion-border-hover); }
+
+.hover-notion:hover { background-color: var(--notion-hover); }
+.hover-notion-light:hover { background-color: var(--notion-hover-light); }
+
+.shadow-notion { box-shadow: var(--notion-shadow); }
+.shadow-notion-md { box-shadow: var(--notion-shadow-md); }
+.shadow-notion-lg { box-shadow: var(--notion-shadow-lg); }
+
+.focus-notion:focus { box-shadow: var(--notion-focus); }
+
+/* Status Color Utilities */
+.text-success { color: var(--todoai-success); }
+.text-warning { color: var(--todoai-warning); }
+.text-error { color: var(--todoai-error); }
+
+.bg-success { background-color: var(--todoai-success-light); }
+.bg-warning { background-color: var(--todoai-warning-light); }
+.bg-error { background-color: var(--todoai-error-light); }
+
+/* Accent Color Utilities */
+.bg-blue-accent { background-color: var(--notion-blue-light); }
+.bg-purple-accent { background-color: var(--notion-purple-light); }
+.bg-green-accent { background-color: var(--notion-green-light); }
+.bg-yellow-accent { background-color: var(--notion-yellow-light); }
+.bg-orange-accent { background-color: var(--notion-orange-light); }
+.bg-red-accent { background-color: var(--notion-red-light); }
+.bg-pink-accent { background-color: var(--notion-pink-light); }
+.bg-brown-accent { background-color: var(--notion-brown-light); }
