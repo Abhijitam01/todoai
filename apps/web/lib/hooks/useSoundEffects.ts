@@ -1,4 +1,4 @@
-import { useRef, useCallback, useState } from 'react';
+import { useRef, useCallback, useState, useEffect } from 'react';
 
 type SoundType = 
   | 'complete' 
@@ -297,6 +297,16 @@ export function useSoundEffects(): UseSoundEffectsReturn {
     if (audioContextRef.current?.state === 'suspended') {
       audioContextRef.current.resume();
     }
+  }, []);
+
+  // Cleanup AudioContext on unmount
+  useEffect(() => {
+    return () => {
+      if (audioContextRef.current) {
+        audioContextRef.current.close().catch(console.warn);
+        audioContextRef.current = null;
+      }
+    };
   }, []);
 
   return {

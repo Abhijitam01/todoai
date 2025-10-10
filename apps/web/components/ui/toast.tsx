@@ -1,6 +1,6 @@
 "use client";
 
-import { createContext, useContext, useState, ReactNode, useCallback } from "react";
+import { createContext, useContext, useState, ReactNode, useCallback, useRef, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { X, CheckCircle, AlertCircle, Info, AlertTriangle, Moon, Calendar, Trash2 } from "lucide-react";
 import { Button } from "./button";
@@ -151,6 +151,7 @@ export function useTaskToasts(): TaskToastMethods {
 
 export function ToastProvider({ children }: { children: ReactNode }) {
   const [toasts, setToasts] = useState<Toast[]>([]);
+  const timeoutsRef = useRef<Map<string, NodeJS.Timeout>>(new Map());
 
   const addToast = useCallback((toast: Omit<Toast, 'id'>) => {
     const id = Math.random().toString(36).substring(2, 15);
@@ -160,18 +161,39 @@ export function ToastProvider({ children }: { children: ReactNode }) {
 
     // Auto-remove toast after duration
     if (toast.duration !== 0) {
-      setTimeout(() => {
+      const timeoutId = setTimeout(() => {
         removeToast(id);
+        timeoutsRef.current.delete(id);
       }, toast.duration || 4000);
+      timeoutsRef.current.set(id, timeoutId);
     }
   }, []);
 
   const removeToast = useCallback((id: string) => {
+    // Clear timeout if it exists
+    const timeoutId = timeoutsRef.current.get(id);
+    if (timeoutId) {
+      clearTimeout(timeoutId);
+      timeoutsRef.current.delete(id);
+    }
+    
     setToasts(prev => prev.filter(toast => toast.id !== id));
   }, []);
 
   const removeAllToasts = useCallback(() => {
+    // Clear all timeouts
+    timeoutsRef.current.forEach(timeoutId => clearTimeout(timeoutId));
+    timeoutsRef.current.clear();
+    
     setToasts([]);
+  }, []);
+
+  // Cleanup on unmount
+  useEffect(() => {
+    return () => {
+      timeoutsRef.current.forEach(timeoutId => clearTimeout(timeoutId));
+      timeoutsRef.current.clear();
+    };
   }, []);
 
   return (

@@ -154,7 +154,7 @@ export function useTasks(options: UseTasksOptions = {}): UseTasksReturn {
       realtimeService.off('task_completed', handleTaskCompleted);
       realtimeService.off('plan_adapted', handlePlanAdapted);
     };
-  }, [fetchTasks]);
+  }, []); // Remove fetchTasks dependency to prevent infinite re-renders
 
   return {
     tasks,

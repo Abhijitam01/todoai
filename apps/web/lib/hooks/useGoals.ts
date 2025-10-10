@@ -141,7 +141,7 @@ export function useGoals(options: UseGoalsOptions = {}): UseGoalsReturn {
       realtimeService.off('goal_progress_updated', handleGoalProgressUpdated);
       realtimeService.off('plan_adapted', handlePlanAdapted);
     };
-  }, [fetchGoals]);
+  }, []); // Remove fetchGoals dependency to prevent infinite re-renders
 
   return {
     goals,
